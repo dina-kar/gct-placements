@@ -9,7 +9,8 @@
     "start": "next start",
     "setup:appwrite": "node scripts/setup-collections.js",
     "setup:attributes": "node scripts/setup-attributes-only.js",
-    "setup:optimized": "node scripts/setup-attributes-optimized.js"
+    "setup:optimized": "node scripts/setup-attributes-optimized.js",
+    "create:admin": "node scripts/create-initial-admin.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

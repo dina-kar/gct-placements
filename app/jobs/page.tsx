@@ -78,22 +78,26 @@ export default function JobsPage() {
   }
 
   const isEligibleForJob = (job: Job) => {
-    if (!user) return { eligible: false, reason: "User not logged in" }
+    if (!user || !user.profile) return { eligible: false, reason: "User profile not found" }
     
-    const userCGPA = parseFloat(user.cgpa || "0")
+    const userCGPA = parseFloat(user.profile.cgpa || "0")
     const minCGPA = parseFloat(job.minCGPA)
     
     if (userCGPA < minCGPA) {
-      return { eligible: false, reason: `Minimum CGPA required: ${minCGPA}` }
+      return { eligible: false, reason: `Minimum CGPA required: ${minCGPA}, your CGPA: ${userCGPA}` }
     }
     
-    if (job.noBacklogs && user.hasBacklogs) {
+    // Check backlogs - convert string to boolean/number if needed
+    const userBacklogs = user.profile.backlogs
+    const hasBacklogs = userBacklogs && userBacklogs !== "0" && userBacklogs.toLowerCase() !== "no"
+    
+    if (job.noBacklogs && hasBacklogs) {
       return { eligible: false, reason: "No backlogs allowed" }
     }
     
-    const userDept = user.department
+    const userDept = user.profile.department
     const allowedDepts = job.departments
-    if (!allowedDepts.includes(userDept)) {
+    if (!userDept || !allowedDepts.includes(userDept)) {
       return { eligible: false, reason: "Department not eligible" }
     }
     

@@ -1,5 +1,7 @@
-import { account, databases, config, UserRole, ID } from './appwrite'
+import { account, databases, config, UserRole, ID, Query } from './appwrite'
 import { AppwriteException } from 'appwrite'
+import { DatabaseService } from './database'
+import type { AdminRole } from './appwrite'
 
 export class AuthService {
   // Validate email domain
@@ -157,7 +159,7 @@ export class AuthService {
     }
   }
 
-  // Get current user
+  // Get current user with profile and admin role
   static async getCurrentUser(): Promise<any> {
     try {
       const user = await account.get()
@@ -165,16 +167,28 @@ export class AuthService {
       // Get user profile
       let userProfile = null
       try {
-        userProfile = await databases.getDocument(
+        const profileResult = await databases.listDocuments(
           config.databaseId,
           config.collections.users,
-          user.$id
+          [Query.equal('email', user.email)]
         )
+        
+        if (profileResult.documents.length > 0) {
+          userProfile = profileResult.documents[0]
+        }
       } catch (error) {
         console.log('User profile not found')
       }
 
-      return { ...user, profile: userProfile }
+      // Check for admin role
+      const adminRole = await DatabaseService.getAdminRole(user.email)
+
+      return { 
+        ...user, 
+        profile: userProfile,
+        adminRole,
+        name: user.name || (userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : 'User')
+      }
     } catch (error) {
       return null
     }
@@ -189,24 +203,80 @@ export class AuthService {
     }
   }
 
-  // Check if user has specific role
+  // Check if user has specific role (from profile or admin role)
   static hasRole(user: any, role: UserRole): boolean {
-    return user?.profile?.role === role
+    if (!user) return false
+    
+    // Check admin role first
+    if (user.adminRole && user.adminRole.role === role && user.adminRole.isActive) {
+      return true
+    }
+    
+    // Check profile role for students
+    if (user.profile && user.profile.role === role) {
+      return true
+    }
+    
+    return false
   }
 
-  // Check if user is admin (based on email address)
+  // Check if user is admin (has any admin role)
   static isAdmin(user: any): boolean {
-    if (!user || !user.email) return false
+    if (!user || !user.adminRole) return false
     
-    // Get admin emails from environment variable
-    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim().toLowerCase()) || []
-    const userEmail = user.email.toLowerCase().trim()
-    
-    return adminEmails.includes(userEmail)
+    const adminRoles = [UserRole.PLACEMENT_REP, UserRole.PLACEMENT_OFFICER, UserRole.PLACEMENT_COORDINATOR]
+    return adminRoles.includes(user.adminRole.role) && user.adminRole.isActive
   }
 
-  // Check if user is placement rep
+  // Check if user is placement rep (can have both admin and student access)
   static isPlacementRep(user: any): boolean {
-    return user?.profile?.isPlacementRep === true || this.hasRole(user, UserRole.PLACEMENT_REP)
+    if (!user) return false
+    
+    // Check admin role
+    if (user.adminRole && user.adminRole.role === UserRole.PLACEMENT_REP && user.adminRole.isActive) {
+      return true
+    }
+    
+    // Check profile flag for students who are placement reps
+    if (user.profile && user.profile.isPlacementRep === true) {
+      return true
+    }
+    
+    return false
+  }
+
+  // Check if user is placement officer
+  static isPlacementOfficer(user: any): boolean {
+    return this.hasRole(user, UserRole.PLACEMENT_OFFICER)
+  }
+
+  // Check if user is placement coordinator  
+  static isPlacementCoordinator(user: any): boolean {
+    return this.hasRole(user, UserRole.PLACEMENT_COORDINATOR)
+  }
+
+  // Check if user should have student access (students and placement reps)
+  static hasStudentAccess(user: any): boolean {
+    if (!user) return false
+    
+    // Students always have student access
+    if (user.profile && user.profile.role === UserRole.STUDENT) {
+      return true
+    }
+    
+    // Placement reps have both admin and student access
+    if (this.isPlacementRep(user)) {
+      return true
+    }
+    
+    return false
+  }
+
+  // Check if user should have admin-only access (officers and coordinators)
+  static hasAdminOnlyAccess(user: any): boolean {
+    if (!user || !user.adminRole || !user.adminRole.isActive) return false
+    
+    return user.adminRole.role === UserRole.PLACEMENT_OFFICER || 
+           user.adminRole.role === UserRole.PLACEMENT_COORDINATOR
   }
 } 

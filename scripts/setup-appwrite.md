@@ -236,3 +236,371 @@ For production deployment, remember to:
 - Set up proper security rules
 - Configure backup strategies
 - Monitor usage and performance 
+
+
+## 🗄️ Complete Appwrite Collection Attributes
+
+### **📋 1. Applications Collection (`applications`)**
+
+**Required Attributes:**
+```
+jobId - String, 255, Required
+userId - String, 255, Required  
+jobTitle - String, 255, Required
+company - String, 255, Required
+status - Enum (applied,under_review,interview_scheduled,selected,rejected), Required, Default: applied
+appliedAt - String, 50, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+**Optional Attributes (for backward compatibility):**
+```
+coverLetter - String, 5000, Optional
+additionalInfo - String, 2000, Optional
+```
+
+**User Details (populated when needed):**
+```
+userName - String, 255, Optional
+userEmail - String, 255, Optional
+userPhone - String, 20, Optional
+userPersonalEmail - String, 255, Optional
+userRollNumber - String, 50, Optional
+userDepartment - String, 255, Optional
+userCGPA - String, 10, Optional
+userActiveBacklog - String, 10, Optional
+userHistoryOfArrear - String, 10, Optional
+userResume - String, 255, Optional
+```
+
+### **👥 2. Users Collection (`users`) - Profile Data**
+
+**Required Attributes:**
+```
+userId - String, 255, Required
+email - Email, 255, Required
+firstName - String, 100, Required
+lastName - String, 100, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+**Personal Information:**
+```
+phone - String, 20, Optional
+personalEmail - String, 255, Optional
+dateOfBirth - String, 20, Optional
+address - String, 500, Optional
+```
+
+**Academic Information:**
+```
+rollNumber - String, 50, Optional
+department - String, 255, Optional
+year - String, 20, Optional
+cgpa - String, 10, Optional
+backlogs - String, 10, Optional (for backward compatibility)
+historyOfArrear - Enum (Yes,No), Optional, Default: No
+activeBacklog - Enum (Yes,No), Optional, Default: No
+```
+
+**Professional Information:**
+```
+skills - String, 1000, Optional
+projects - String, 2000, Optional
+internships - String, 2000, Optional
+achievements - String, 2000, Optional
+bio - String, 1000, Optional
+```
+
+**Files:**
+```
+profilePicture - String, 255, Optional
+resume - String, 255, Optional
+```
+
+**Role Management:**
+```
+role - Enum (student,placement_rep,placement_officer,placement_coordinator), Optional, Default: student
+isPlacementRep - Boolean, Optional, Default: false
+```
+
+### **💼 3. Jobs Collection (`jobs`)**
+
+**Required Attributes:**
+```
+title - String, 255, Required
+company - String, 255, Required
+location - String, 255, Required
+jobType - String, 50, Required
+package - String, 100, Required
+description - String, 5000, Required
+minCGPA - String, 10, Required
+noBacklogs - Boolean, Required, Default: true
+departments - String, 2000, Required (JSON array as string)
+applicationDeadline - String, 50, Required
+status - Enum (active,closed,draft), Required, Default: active
+createdBy - String, 255, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+**Optional Attributes:**
+```
+driveDate - String, 50, Optional
+logo - String, 255, Optional
+additionalDocuments - String, 255, Optional
+```
+
+### **🎓 4. Placements Collection (`placements`)**
+
+**Required Attributes (minimum schema):**
+```
+userId - String, 255, Required
+jobId - String, 255, Required
+company - String, 255, Required
+package - String, 100, Required
+placedAt - String, 50, Required
+createdAt - String, 50, Required
+```
+
+**Optional Attributes (for UI display):**
+```
+studentName - String, 255, Optional
+studentId - String, 50, Optional
+department - String, 255, Optional
+batch - String, 20, Optional
+position - String, 255, Optional
+location - String, 255, Optional
+joiningDate - String, 50, Optional
+offerLetterDate - String, 50, Optional
+testimonial - String, 2000, Optional
+photo - String, 255, Optional
+offerLetter - String, 255, Optional
+updatedAt - String, 50, Optional
+```
+
+### **🏢 5. Companies Collection (`companies`)**
+
+**Required Attributes:**
+```
+name - String, 255, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+**Optional Attributes:**
+```
+description - String, 2000, Optional
+website - String, 255, Optional
+logo - String, 255, Optional
+location - String, 255, Optional
+industry - String, 255, Optional
+```
+
+### **⚙️ 6. Admin Roles Collection (`admin_roles`)**
+
+**Required Attributes:**
+```
+email - String, 255, Required
+role - Enum (placement_rep,placement_officer,placement_coordinator), Required
+name - String, 255, Required
+isActive - Boolean, Required, Default: true
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+**Optional Attributes:**
+```
+department - String, 255, Optional
+```
+
+## 🔧 **Quick Setup Summary**
+
+### **Immediate Priority (for job applications to work):**
+1. **Applications Collection**: Add `jobTitle`, `company`, `userPhone`, `userPersonalEmail`, `userActiveBacklog`, `userHistoryOfArrear`
+2. **Users Collection**: Add `personalEmail`, `historyOfArrear`, `activeBacklog`
+
+### **Recommended Indexes:**
+```
+Applications: jobId (ASC), userId (ASC), status (ASC), appliedAt (DESC)
+Users: userId (ASC), email (ASC), role (ASC)
+Jobs: status (ASC), company (ASC), createdAt (DESC)
+Placements: userId (ASC), company (ASC), placedAt (DESC)
+Companies: name (ASC)
+AdminRoles: email (ASC), role (ASC)
+```
+
+### **Permissions (for all collections):**
+```
+Read: users
+Write: users
+Update: users (with role-based restrictions in code)
+Delete: users (with role-based restrictions in code)
+```
+
+The application will now collect the new fields (personal email, history of arrear, active backlog) in the user profile and use them for eligibility checking, while the cover letter and additional information have been completely removed from the UI.
+
+```plaintext
+jobId - String, 255, Required
+userId - String, 255, Required  
+jobTitle - String, 255, Required
+company - String, 255, Required
+status - Enum (applied,under_review,interview_scheduled,selected,rejected), Required, Default: applied
+appliedAt - String, 50, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+```plaintext
+coverLetter - String, 5000, Optional
+additionalInfo - String, 2000, Optional
+```
+
+```plaintext
+userName - String, 255, Optional
+userEmail - String, 255, Optional
+userPhone - String, 20, Optional
+userPersonalEmail - String, 255, Optional
+userRollNumber - String, 50, Optional
+userDepartment - String, 255, Optional
+userCGPA - String, 10, Optional
+userActiveBacklog - String, 10, Optional
+userHistoryOfArrear - String, 10, Optional
+userResume - String, 255, Optional
+```
+
+```plaintext
+userId - String, 255, Required
+email - Email, 255, Required
+firstName - String, 100, Required
+lastName - String, 100, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+```plaintext
+phone - String, 20, Optional
+personalEmail - String, 255, Optional
+dateOfBirth - String, 20, Optional
+address - String, 500, Optional
+```
+
+```plaintext
+rollNumber - String, 50, Optional
+department - String, 255, Optional
+year - String, 20, Optional
+cgpa - String, 10, Optional
+backlogs - String, 10, Optional (for backward compatibility)
+historyOfArrear - Enum (Yes,No), Optional, Default: No
+activeBacklog - Enum (Yes,No), Optional, Default: No
+```
+
+```plaintext
+skills - String, 1000, Optional
+projects - String, 2000, Optional
+internships - String, 2000, Optional
+achievements - String, 2000, Optional
+bio - String, 1000, Optional
+```
+
+```plaintext
+profilePicture - String, 255, Optional
+resume - String, 255, Optional
+```
+
+```plaintext
+role - Enum (student,placement_rep,placement_officer,placement_coordinator), Optional, Default: student
+isPlacementRep - Boolean, Optional, Default: false
+```
+
+```plaintext
+title - String, 255, Required
+company - String, 255, Required
+location - String, 255, Required
+jobType - String, 50, Required
+package - String, 100, Required
+description - String, 5000, Required
+minCGPA - String, 10, Required
+noBacklogs - Boolean, Required, Default: true
+departments - String, 2000, Required (JSON array as string)
+applicationDeadline - String, 50, Required
+status - Enum (active,closed,draft), Required, Default: active
+createdBy - String, 255, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+```plaintext
+driveDate - String, 50, Optional
+logo - String, 255, Optional
+additionalDocuments - String, 255, Optional
+```
+
+```plaintext
+userId - String, 255, Required
+jobId - String, 255, Required
+company - String, 255, Required
+package - String, 100, Required
+placedAt - String, 50, Required
+createdAt - String, 50, Required
+```
+
+```plaintext
+studentName - String, 255, Optional
+studentId - String, 50, Optional
+department - String, 255, Optional
+batch - String, 20, Optional
+position - String, 255, Optional
+location - String, 255, Optional
+joiningDate - String, 50, Optional
+offerLetterDate - String, 50, Optional
+testimonial - String, 2000, Optional
+photo - String, 255, Optional
+offerLetter - String, 255, Optional
+updatedAt - String, 50, Optional
+```
+
+```plaintext
+name - String, 255, Required
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+```plaintext
+description - String, 2000, Optional
+website - String, 255, Optional
+logo - String, 255, Optional
+location - String, 255, Optional
+industry - String, 255, Optional
+```
+
+```plaintext
+email - String, 255, Required
+role - Enum (placement_rep,placement_officer,placement_coordinator), Required
+name - String, 255, Required
+isActive - Boolean, Required, Default: true
+createdAt - String, 50, Required
+updatedAt - String, 50, Required
+```
+
+```plaintext
+department - String, 255, Optional
+```
+
+```plaintext
+Applications: jobId (ASC), userId (ASC), status (ASC), appliedAt (DESC)
+Users: userId (ASC), email (ASC), role (ASC)
+Jobs: status (ASC), company (ASC), createdAt (DESC)
+Placements: userId (ASC), company (ASC), placedAt (DESC)
+Companies: name (ASC)
+AdminRoles: email (ASC), role (ASC)
+```
+
+```plaintext
+Read: users
+Write: users
+Update: users (with role-based restrictions in code)
+Delete: users (with role-based restrictions in code)
+```

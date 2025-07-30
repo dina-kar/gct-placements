@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DatePicker as ShadcnDatePicker } from "@/components/ui/date-picker"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Building2, ArrowLeft, Upload, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { DatabaseService } from "@/lib/database"
+import { AdminRoute } from "@/components/ProtectedRoute"
 
 export default function AddPlacementPage() {
   const router = useRouter()
@@ -23,6 +25,7 @@ export default function AddPlacementPage() {
   const [formData, setFormData] = useState({
     studentName: "",
     studentId: "",
+    studentEmail: "",
     department: "",
     batch: "",
     company: "",
@@ -31,7 +34,9 @@ export default function AddPlacementPage() {
     location: "",
     joiningDate: "",
     offerLetterDate: "",
+    placedAt: "",
     testimonial: "",
+    jobId: "",
     photo: null as File | null,
     offerLetter: null as File | null,
   })
@@ -41,15 +46,14 @@ export default function AddPlacementPage() {
     "Information Technology",
     "Electronics and Communication Engineering",
     "Electrical and Electronics Engineering",
+    "Electronics and Instrumentation Engineering",
     "Mechanical Engineering",
     "Civil Engineering",
-    "Chemical Engineering",
-    "Textile Technology",
     "Production Engineering",
-    "Biomedical Engineering",
+    "Industrial Biotechnology",
   ]
 
-  const batches = ["2024", "2023", "2022", "2021"]
+  const batches = ["2025", "2026", "2027", "2028"]
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: "photo" | "offerLetter") => {
     if (e.target.files && e.target.files[0]) {
@@ -66,8 +70,35 @@ export default function AddPlacementPage() {
     setMessage({ type: "", text: "" })
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Validate required fields
+      if (!formData.studentName || !formData.company || !formData.package) {
+        throw new Error("Please fill in all required fields: Student Name, Company, and Package")
+      }
+
+      // Upload files if provided
+      let photoFileId = null
+      let offerLetterFileId = null
+
+      if (formData.photo) {
+        const photoUpload = await DatabaseService.uploadFile(formData.photo)
+        photoFileId = photoUpload.$id
+      }
+
+      if (formData.offerLetter) {
+        const offerLetterUpload = await DatabaseService.uploadFile(formData.offerLetter)
+        offerLetterFileId = offerLetterUpload.$id
+      }
+
+      // Create placement record with only the required database fields
+      const placementData = {
+        userId: formData.studentEmail || `manual_${Date.now()}`,
+        jobId: formData.jobId || `manual_job_${Date.now()}`,
+        company: formData.company,
+        package: formData.package,
+        placedAt: formData.placedAt || new Date().toISOString(),
+      }
+
+      await DatabaseService.createPlacement(placementData)
 
       setMessage({
         type: "success",
@@ -76,12 +107,13 @@ export default function AddPlacementPage() {
 
       // Reset form after successful submission
       setTimeout(() => {
-        router.push("/admin/placements")
+        router.push("/placements")
       }, 2000)
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error creating placement:', error)
       setMessage({
         type: "error",
-        text: "Failed to add placement record. Please try again.",
+        text: error.message || "Failed to add placement record. Please try again.",
       })
     } finally {
       setIsLoading(false)
@@ -89,11 +121,11 @@ export default function AddPlacementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <AdminRoute>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center gap-4">
             <Link href="/admin/dashboard">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -106,96 +138,108 @@ export default function AddPlacementPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
-                <p className="text-sm text-gray-600">Admin Dashboard</p>
+                <p className="text-sm text-gray-600">Add New Placement</p>
               </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Add Placement Record</h1>
-            <p className="text-gray-600">Enter details about a student's placement</p>
-          </div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Placement Record</h1>
+              <p className="text-gray-600">Create a new placement record for a student</p>
+            </div>
 
-          {message.text && (
-            <Alert
-              className={`mb-6 ${message.type === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}
-            >
-              {message.type === "success" ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              ) : (
-                <AlertCircle className="h-4 w-4 text-red-600" />
-              )}
-              <AlertDescription className={message.type === "success" ? "text-green-700" : "text-red-700"}>
-                {message.text}
-              </AlertDescription>
-            </Alert>
-          )}
+            {message.text && (
+              <Alert
+                className={`mb-6 ${message.type === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}
+              >
+                {message.type === "success" ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                )}
+                <AlertDescription className={message.type === "success" ? "text-green-700" : "text-red-700"}>
+                  {message.text}
+                </AlertDescription>
+              </Alert>
+            )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Placement Information</CardTitle>
-              <CardDescription>
-                Fill in the details of the student's placement. All fields marked with * are required.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Student Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Student Information</h3>
+            <Card>
+              <CardHeader>
+                <CardTitle>Placement Information</CardTitle>
+                <CardDescription>
+                  Fill in the details of the student's placement. All fields marked with * are required.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Student Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Student Information</h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="studentName">Student Name *</Label>
-                      <Input
-                        id="studentName"
-                        value={formData.studentName}
-                        onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                        required
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="studentName">Student Name *</Label>
+                        <Input
+                          id="studentName"
+                          placeholder="Enter student full name"
+                          value={formData.studentName}
+                          onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="studentId">Student ID/Roll Number</Label>
+                        <Input
+                          id="studentId"
+                          placeholder="Enter roll number or student ID"
+                          value={formData.studentId}
+                          onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="studentId">Student ID/Roll Number *</Label>
-                      <Input
-                        id="studentId"
-                        value={formData.studentId}
-                        onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department *</Label>
-                      <Select
-                        value={formData.department}
-                        onValueChange={(value) => setFormData({ ...formData, department: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept} value={dept}>
-                              {dept}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="studentEmail">Student Email (Optional)</Label>
+                        <Input
+                          id="studentEmail"
+                          type="email"
+                          placeholder="student@gct.ac.in"
+                          value={formData.studentEmail}
+                          onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
+                        />
+                        <p className="text-xs text-gray-500">Used to link with existing student profile if available</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="department">Department</Label>
+                        <Select
+                          value={formData.department}
+                          onValueChange={(value) => setFormData({ ...formData, department: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map((dept) => (
+                              <SelectItem key={dept} value={dept}>
+                                {dept}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="batch">Batch/Year *</Label>
+                      <Label htmlFor="batch">Batch/Year</Label>
                       <Select
                         value={formData.batch}
                         onValueChange={(value) => setFormData({ ...formData, batch: value })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full md:w-[200px]">
                           <SelectValue placeholder="Select batch" />
                         </SelectTrigger>
                         <SelectContent>
@@ -209,143 +253,158 @@ export default function AddPlacementPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="photo">Student Photo</Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="photo"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileChange(e, "photo")}
-                        className="flex-1"
+                  {/* Company Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Company & Position Details</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="company">Company Name *</Label>
+                        <Input
+                          id="company"
+                          placeholder="e.g., Google, Microsoft, TCS"
+                          value={formData.company}
+                          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="position">Position/Role</Label>
+                        <Input
+                          id="position"
+                          placeholder="e.g., Software Engineer, Data Analyst"
+                          value={formData.position}
+                          onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="package">Package/Salary *</Label>
+                        <Input
+                          id="package"
+                          placeholder="e.g., ₹12 LPA, $80,000"
+                          value={formData.package}
+                          onChange={(e) => setFormData({ ...formData, package: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Work Location</Label>
+                        <Input
+                          id="location"
+                          placeholder="e.g., Bangalore, Chennai, Remote"
+                          value={formData.location}
+                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Important Dates */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Important Dates</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="placedAt">Placement Date</Label>
+                        <DatePicker
+                          value={formData.placedAt}
+                          onChange={(date) => setFormData({ ...formData, placedAt: date })}
+                          placeholder="Select placement date"
+                        />
+                        <p className="text-xs text-gray-500">Date when student got placed</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="offerLetterDate">Offer Letter Date</Label>
+                        <DatePicker
+                          value={formData.offerLetterDate}
+                          onChange={(date) => setFormData({ ...formData, offerLetterDate: date })}
+                          placeholder="Select offer date"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="joiningDate">Joining Date</Label>
+                        <DatePicker
+                          value={formData.joiningDate}
+                          onChange={(date) => setFormData({ ...formData, joiningDate: date })}
+                          placeholder="Select joining date"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Additional Information</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="testimonial">Student Testimonial</Label>
+                      <Textarea
+                        id="testimonial"
+                        placeholder="Share the student's thoughts about their placement experience..."
+                        value={formData.testimonial}
+                        onChange={(e) => setFormData({ ...formData, testimonial: e.target.value })}
+                        rows={4}
                       />
-                      <Button type="button" variant="outline" onClick={() => document.getElementById("photo")?.click()}>
-                        <Upload className="w-4 h-4 mr-2" />
-                        Browse
+                    </div>
+                  </div>
+
+                  {/* File Uploads */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Documents</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="photo">Student Photo</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="photo"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, "photo")}
+                          />
+                          <Upload className="w-4 h-4 text-gray-400" />
+                        </div>
+                        {formData.photo && (
+                          <p className="text-xs text-gray-500">Selected: {formData.photo.name}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="offerLetter">Offer Letter</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="offerLetter"
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) => handleFileChange(e, "offerLetter")}
+                          />
+                          <Upload className="w-4 h-4 text-gray-400" />
+                        </div>
+                        {formData.offerLetter && (
+                          <p className="text-xs text-gray-500">Selected: {formData.offerLetter.name}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <Link href="/admin/dashboard">
+                      <Button type="button" variant="outline">
+                        Cancel
                       </Button>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Upload a professional photo of the student (JPEG, PNG, max 2MB)
-                    </p>
+                    </Link>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? "Adding..." : "Add Placement Record"}
+                    </Button>
                   </div>
-                </div>
-
-                {/* Company Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Company Information</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="company">Company Name *</Label>
-                      <Input
-                        id="company"
-                        value={formData.company}
-                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="position">Position/Role *</Label>
-                      <Input
-                        id="position"
-                        value={formData.position}
-                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="package">Package (LPA) *</Label>
-                      <Input
-                        id="package"
-                        placeholder="e.g., ₹8 LPA"
-                        value={formData.package}
-                        onChange={(e) => setFormData({ ...formData, package: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        placeholder="e.g., Bangalore"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="offerLetterDate">Offer Letter Date *</Label>
-                      <ShadcnDatePicker
-                        value={formData.offerLetterDate}
-                        onChange={(value) => setFormData({ ...formData, offerLetterDate: value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="joiningDate">Joining Date</Label>
-                      <ShadcnDatePicker
-                        value={formData.joiningDate}
-                        onChange={(value) => setFormData({ ...formData, joiningDate: value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="offerLetter">Offer Letter</Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="offerLetter"
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => handleFileChange(e, "offerLetter")}
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById("offerLetter")?.click()}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Browse
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500">Upload the offer letter (PDF, DOC, max 5MB)</p>
-                  </div>
-                </div>
-
-                {/* Additional Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Additional Information</h3>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="testimonial">Student Testimonial</Label>
-                    <Textarea
-                      id="testimonial"
-                      placeholder="Share the student's experience or testimonial about the placement process"
-                      value={formData.testimonial}
-                      onChange={(e) => setFormData({ ...formData, testimonial: e.target.value })}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-4">
-                  <Button type="button" variant="outline" onClick={() => router.back()}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Saving..." : "Save Placement Record"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </AdminRoute>
   )
 }

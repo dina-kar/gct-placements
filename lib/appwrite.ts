@@ -25,6 +25,7 @@ export const config = {
     applications: process.env.NEXT_PUBLIC_APPWRITE_APPLICATIONS_COLLECTION_ID || 'applications',
     placements: process.env.NEXT_PUBLIC_APPWRITE_PLACEMENTS_COLLECTION_ID || 'placements',
     companies: process.env.NEXT_PUBLIC_APPWRITE_COMPANIES_COLLECTION_ID || 'companies',
+    adminRoles: process.env.NEXT_PUBLIC_APPWRITE_ADMIN_ROLES_COLLECTION_ID || 'admin_roles',
   },
   allowedEmailDomain: process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAIN || 'gct.ac.in'
 }
@@ -55,6 +56,7 @@ export interface UserProfile {
   lastName: string
   email: string
   phone?: string
+  personalEmail?: string
   rollNumber?: string
   department?: string
   year?: string
@@ -62,6 +64,8 @@ export interface UserProfile {
   address?: string
   cgpa?: string
   backlogs?: string
+  historyOfArrear?: string
+  activeBacklog?: string
   skills?: string
   projects?: string
   internships?: string
@@ -70,6 +74,7 @@ export interface UserProfile {
   profilePicture?: string
   resume?: string
   isPlacementRep?: boolean
+  role?: UserRole
   createdAt: string
   updatedAt: string
 }
@@ -110,20 +115,36 @@ export interface Application {
   // User details (populated when needed)
   userName?: string
   userEmail?: string
+  userPhone?: string
+  userPersonalEmail?: string
   userRollNumber?: string
   userDepartment?: string
   userCGPA?: string
+  userActiveBacklog?: string
+  userHistoryOfArrear?: string
   userResume?: string
 }
 
 export interface Placement {
   $id: string
   userId: string
-  jobId: string
+  jobId?: string
+  studentName?: string  // Keep for backward compatibility
+  studentId?: string    // Keep for backward compatibility
+  department?: string   // Keep for backward compatibility  
+  batch?: string        // Keep for backward compatibility
   company: string
+  position?: string     // Keep for backward compatibility
   package: string
+  location?: string
+  joiningDate?: string
+  offerLetterDate?: string
   placedAt: string
+  testimonial?: string
+  photo?: string
+  offerLetter?: string
   createdAt: string
+  updatedAt?: string
 }
 
 export interface Company {
@@ -134,6 +155,18 @@ export interface Company {
   logo?: string
   location?: string
   industry?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Admin role interface for collection-based admin management
+export interface AdminRole {
+  $id: string
+  email: string
+  role: UserRole.PLACEMENT_REP | UserRole.PLACEMENT_OFFICER | UserRole.PLACEMENT_COORDINATOR
+  name: string
+  department?: string
+  isActive: boolean
   createdAt: string
   updatedAt: string
 } 

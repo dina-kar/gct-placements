@@ -32,7 +32,7 @@ import { Job, Application } from "@/lib/appwrite"
 import { AdminRoute } from "@/components/ProtectedRoute"
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth()
+  const { user, logout, isPlacementRep, hasStudentAccess, isPlacementCoordinator } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [selectedJob, setSelectedJob] = useState<string>("all")
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
     }
 
     // Create CSV data
-    const headers = ["Name", "Roll Number", "Department", "CGPA", "Job Title", "Company", "Status", "Applied Date", "Resume Link"]
+    const headers = ["Name", "Roll Number", "Department", "CGPA", "Active Backlog", "History of Arrear", "Personal Email", "Phone", "Job Title", "Company", "Status", "Applied Date", "Resume Link"]
     const csvData = [
       headers,
       ...filteredApplications.map(app => [
@@ -131,6 +131,10 @@ export default function AdminDashboard() {
         app.userRollNumber || "N/A", 
         app.userDepartment || "N/A",
         app.userCGPA || "N/A",
+        app.userActiveBacklog || "N/A",
+        app.userHistoryOfArrear || "N/A",
+        app.userPersonalEmail || "N/A",
+        app.userPhone || "N/A",
         app.jobTitle || "N/A",
         app.company || "N/A",
         app.status || "N/A",
@@ -209,12 +213,42 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {hasStudentAccess && (
+                <Link href="/dashboard">
+                  <Button variant="outline" size="sm">
+                    <Users className="w-4 h-4 mr-2" />
+                    Student Portal
+                  </Button>
+                </Link>
+              )}
               <Link href="/admin/add-job">
                 <Button variant="outline" size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Job
                 </Button>
               </Link>
+              <Link href="/admin/add-placement">
+                <Button variant="outline" size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Placement
+                </Button>
+              </Link>
+              <Link href="/placements">
+                <Button variant="outline" className="h-auto p-4 justify-start">
+                  <div className="text-left">
+                    <div className="font-medium">View Placements</div>
+                    <div className="text-sm text-gray-600">See all placement records</div>
+                  </div>
+                </Button>
+              </Link>
+              {isPlacementCoordinator && (
+                <Link href="/admin/manage-admins">
+                  <Button variant="outline" size="sm">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Manage Admins
+                  </Button>
+                </Link>
+              )}
               <Button variant="ghost" size="sm">
                 <Settings className="w-4 h-4" />
               </Button>
@@ -424,13 +458,6 @@ export default function AdminDashboard() {
                           </a>
                         )}
                       </div>
-
-                      {application.coverLetter && (
-                        <div className="bg-gray-50 rounded p-3 mb-3">
-                          <h4 className="font-medium text-sm text-gray-900 mb-1">Cover Letter:</h4>
-                          <p className="text-sm text-gray-700 line-clamp-3">{application.coverLetter}</p>
-                        </div>
-                      )}
 
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline">

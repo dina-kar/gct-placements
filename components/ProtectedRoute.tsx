@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
   requireAuth?: boolean
   requiredRole?: UserRole
   adminOnly?: boolean
+  studentAccessOnly?: boolean
   redirectTo?: string
 }
 
@@ -18,9 +19,10 @@ export function ProtectedRoute({
   requireAuth = true,
   requiredRole,
   adminOnly = false,
+  studentAccessOnly = false,
   redirectTo = '/login'
 }: ProtectedRouteProps) {
-  const { user, loading, isAuthenticated, isAdmin, hasRole } = useAuth()
+  const { user, loading, isAuthenticated, isAdmin, hasStudentAccess, hasAdminOnlyAccess, hasRole } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -32,18 +34,41 @@ export function ProtectedRoute({
       return
     }
 
-    // Check admin requirement
+    // Check admin requirement - placement reps can access both admin and student routes
     if (adminOnly && !isAdmin) {
-      router.push('/dashboard') // Redirect non-admins to regular dashboard
+      // Redirect non-admins to appropriate dashboard
+      if (hasStudentAccess) {
+        router.push('/dashboard') // Student dashboard for students/placement reps
+      } else {
+        router.push('/login') // No access
+      }
+      return
+    }
+
+    // Check student access requirement - only students and placement reps
+    if (studentAccessOnly && !hasStudentAccess) {
+      // Redirect admin-only users to admin dashboard
+      if (hasAdminOnlyAccess) {
+        router.push('/admin/dashboard')
+      } else {
+        router.push('/login') // No access
+      }
       return
     }
 
     // Check specific role requirement
     if (requiredRole && !hasRole(requiredRole)) {
-      router.push('/dashboard') // Redirect to dashboard if role doesn't match
+      // Intelligent redirect based on user's access
+      if (hasAdminOnlyAccess) {
+        router.push('/admin/dashboard')
+      } else if (hasStudentAccess) {
+        router.push('/dashboard')
+      } else {
+        router.push('/login')
+      }
       return
     }
-  }, [loading, isAuthenticated, isAdmin, hasRole, requiredRole, adminOnly, requireAuth, router, redirectTo])
+  }, [loading, isAuthenticated, isAdmin, hasStudentAccess, hasAdminOnlyAccess, hasRole, requiredRole, adminOnly, studentAccessOnly, requireAuth, router, redirectTo])
 
   // Show loading state
   if (loading) {
@@ -60,6 +85,10 @@ export function ProtectedRoute({
   }
 
   if (adminOnly && !isAdmin) {
+    return null
+  }
+
+  if (studentAccessOnly && !hasStudentAccess) {
     return null
   }
 
@@ -87,7 +116,7 @@ export function withProtectedRoute<P extends object>(
 // Specific role-based protection components
 export function StudentRoute({ children }: { children: React.ReactNode }) {
   return (
-    <ProtectedRoute requiredRole={UserRole.STUDENT}>
+    <ProtectedRoute studentAccessOnly>
       {children}
     </ProtectedRoute>
   )
@@ -102,11 +131,25 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function PlacementRepRoute({ children }: { children: React.ReactNode }) {
-  const { user, isPlacementRep, isAdmin } = useAuth()
-  
-  if (!isPlacementRep && !isAdmin) {
-    return null
-  }
-  
-  return <>{children}</>
+  return (
+    <ProtectedRoute requiredRole={UserRole.PLACEMENT_REP}>
+      {children}
+    </ProtectedRoute>
+  )
+}
+
+export function PlacementOfficerRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute requiredRole={UserRole.PLACEMENT_OFFICER}>
+      {children}
+    </ProtectedRoute>
+  )
+}
+
+export function PlacementCoordinatorRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute requiredRole={UserRole.PLACEMENT_COORDINATOR}>
+      {children}
+    </ProtectedRoute>
+  )
 } 

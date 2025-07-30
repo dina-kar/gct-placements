@@ -7,11 +7,12 @@ A comprehensive placement management system for Government College of Technology
 ### 🔐 Authentication
 - **Email OTP Authentication**: Secure login using Appwrite's email OTP system
 - **Domain Validation**: Only `@gct.ac.in` email addresses are allowed
+- **Collection-based Admin Management**: Admin roles are managed through a dedicated collection
 - **Role-based Access Control**: Support for multiple user roles:
-  - Students
-  - Placement Representatives
-  - Placement Officers
-  - Placement Coordinators
+  - **Students**: Standard user access with job browsing and application features
+  - **Placement Representatives**: Dual access to both student and admin features
+  - **Placement Officers**: Admin-only access for managing jobs and applications
+  - **Placement Coordinators**: Full administrative access including user management
 
 ### 👥 User Management
 - **Student Profiles**: Comprehensive profile management with:
@@ -91,6 +92,7 @@ NEXT_PUBLIC_APPWRITE_JOBS_COLLECTION_ID=jobs
 NEXT_PUBLIC_APPWRITE_APPLICATIONS_COLLECTION_ID=applications
 NEXT_PUBLIC_APPWRITE_PLACEMENTS_COLLECTION_ID=placements
 NEXT_PUBLIC_APPWRITE_COMPANIES_COLLECTION_ID=companies
+NEXT_PUBLIC_APPWRITE_ADMIN_ROLES_COLLECTION_ID=admin_roles
 
 # Email Domain
 NEXT_PUBLIC_ALLOWED_EMAIL_DOMAIN=gct.ac.in
@@ -154,11 +156,13 @@ placement-app/
 - View placement statistics
 
 ### Placement Representatives
-- All student permissions
+- All student permissions (dual access)
+- Can switch between student and admin portals
+- Access to basic admin features
 - Assist in placement coordination
-- View department-specific data
 
 ### Placement Officers
+- Admin-only access (no student portal)
 - Manage job postings
 - Review applications
 - Update application status
@@ -166,10 +170,11 @@ placement-app/
 - View analytics and reports
 
 ### Placement Coordinators
+- Full administrative access
 - All officer permissions
+- Admin role management through dedicated interface
 - System administration
-- User role management
-- Advanced analytics
+- Advanced analytics and reporting
 
 ## Key Features Implementation
 
@@ -250,6 +255,23 @@ export class DatabaseService {
 - Check the detailed setup guide in `scripts/setup-appwrite.md`
 - Review Appwrite documentation for advanced configuration
 - Ensure all environment variables are properly set
+
+## Initial Setup
+
+After running the setup scripts and deploying the application:
+
+1. **Create Initial Admin**: Use the Appwrite console to manually add the first placement coordinator record to the `admin_roles` collection
+2. **Admin Role Structure**:
+   ```json
+   {
+     "email": "coordinator@gct.ac.in",
+     "role": "placement_coordinator", 
+     "name": "Coordinator Name",
+     "department": "Computer Science and Engineering",
+     "isActive": true
+   }
+   ```
+3. **Role Management**: Placement coordinators can then use the admin interface to manage other admin roles
 
 ## Contributing
 

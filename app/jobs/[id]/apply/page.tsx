@@ -16,6 +16,7 @@ import {
   Upload,
   CheckCircle,
   AlertCircle,
+  Download,
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
@@ -33,8 +34,6 @@ export default function ApplyJobPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [applicationData, setApplicationData] = useState({
-    coverLetter: "",
-    additionalInfo: "",
     confirmedEligibility: false,
     agreeTnC: false,
   })
@@ -86,22 +85,25 @@ export default function ApplyJobPage() {
   }
 
   const isEligibleForJob = (job: Job) => {
-    if (!user || !job) return { eligible: false, reason: "User not found" }
+    if (!user || !user.profile || !job) return { eligible: false, reason: "User profile not found" }
     
-    const userCGPA = parseFloat(user.cgpa || "0")
+    const userCGPA = parseFloat(user.profile.cgpa || "0")
     const minCGPA = parseFloat(job.minCGPA)
     
     if (userCGPA < minCGPA) {
-      return { eligible: false, reason: `Minimum CGPA required: ${minCGPA}` }
+      return { eligible: false, reason: `Minimum CGPA required: ${minCGPA}, your CGPA: ${userCGPA}` }
     }
     
-    if (job.noBacklogs && user.hasBacklogs) {
-      return { eligible: false, reason: "No backlogs allowed" }
+    // Check backlogs - use new activeBacklog field
+    const hasActiveBacklogs = user.profile.activeBacklog === "Yes"
+    
+    if (job.noBacklogs && hasActiveBacklogs) {
+      return { eligible: false, reason: "No active backlogs allowed" }
     }
     
-    const userDept = user.department
+    const userDept = user.profile.department
     const allowedDepts = job.departments
-    if (!allowedDepts.includes(userDept)) {
+    if (!userDept || !allowedDepts.includes(userDept)) {
       return { eligible: false, reason: "Department not eligible" }
     }
     
@@ -132,8 +134,6 @@ export default function ApplyJobPage() {
         jobTitle: job.title,
         company: job.company,
         status: 'applied',
-        coverLetter: applicationData.coverLetter,
-        additionalInfo: applicationData.additionalInfo,
         appliedAt: new Date().toISOString(),
       })
 
@@ -143,6 +143,20 @@ export default function ApplyJobPage() {
       alert("Failed to submit application. Please try again.")
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const downloadFile = async (fileId: string, filename: string) => {
+    try {
+      const downloadUrl = await DatabaseService.getFileDownload(fileId)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error('Error downloading file:', error)
     }
   }
 
@@ -230,7 +244,7 @@ export default function ApplyJobPage() {
                         <Label htmlFor="name">Full Name</Label>
                         <Input
                           id="name"
-                          value={user?.name || ""}
+                          value={user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : user?.name || ""}
                           disabled
                           className="bg-gray-50"
                         />
@@ -248,7 +262,7 @@ export default function ApplyJobPage() {
                         <Label htmlFor="rollNumber">Roll Number</Label>
                         <Input
                           id="rollNumber"
-                          value={user?.rollNumber || ""}
+                          value={user?.profile?.rollNumber || ""}
                           disabled
                           className="bg-gray-50"
                         />
@@ -257,7 +271,7 @@ export default function ApplyJobPage() {
                         <Label htmlFor="department">Department</Label>
                         <Input
                           id="department"
-                          value={user?.department || ""}
+                          value={user?.profile?.department || ""}
                           disabled
                           className="bg-gray-50"
                         />
@@ -266,59 +280,42 @@ export default function ApplyJobPage() {
                         <Label htmlFor="cgpa">CGPA</Label>
                         <Input
                           id="cgpa"
-                          value={user?.cgpa || ""}
+                          value={user?.profile?.cgpa || ""}
                           disabled
                           className="bg-gray-50"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="backlogs">Active Backlogs</Label>
                         <Input
-                          id="phone"
-                          value={user?.phone || ""}
+                          id="backlogs"
+                          value={user?.profile?.activeBacklog || "No"}
                           disabled
                           className="bg-gray-50"
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Cover Letter */}
-                  <div className="space-y-2">
-                    <Label htmlFor="coverLetter">Cover Letter</Label>
-                    <Textarea
-                      id="coverLetter"
-                      placeholder="Write a brief cover letter explaining why you're interested in this position and what makes you a good fit..."
-                      value={applicationData.coverLetter}
-                      onChange={(e) => setApplicationData({
-                        ...applicationData,
-                        coverLetter: e.target.value
-                      })}
-                      rows={6}
-                      className="resize-none"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Optional but recommended. Highlight your relevant skills and experience.
-                    </p>
-                  </div>
-
-                  {/* Additional Information */}
-                  <div className="space-y-2">
-                    <Label htmlFor="additionalInfo">Additional Information</Label>
-                    <Textarea
-                      id="additionalInfo"
-                      placeholder="Any additional information you'd like to share (projects, achievements, certifications, etc.)..."
-                      value={applicationData.additionalInfo}
-                      onChange={(e) => setApplicationData({
-                        ...applicationData,
-                        additionalInfo: e.target.value
-                      })}
-                      rows={4}
-                      className="resize-none"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Optional. Include any relevant projects, certifications, or achievements.
-                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="historyOfArrear">History of Arrear</Label>
+                        <Input
+                          id="historyOfArrear"
+                          value={user?.profile?.historyOfArrear || "No"}
+                          disabled
+                          className="bg-gray-50"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="personalEmail">Personal Email</Label>
+                        <Input
+                          id="personalEmail"
+                          value={user?.profile?.personalEmail || ""}
+                          disabled
+                          className="bg-gray-50"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Documents Section */}
@@ -333,7 +330,7 @@ export default function ApplyJobPage() {
                             Make sure your resume is uploaded in your profile. The latest version will be 
                             automatically included with your application.
                           </p>
-                          {user?.resume ? (
+                          {user?.profile?.resume ? (
                             <div className="flex items-center gap-2 mt-2">
                               <CheckCircle className="w-4 h-4 text-green-600" />
                               <span className="text-sm text-green-600">Resume uploaded</span>

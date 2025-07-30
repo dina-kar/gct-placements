@@ -29,7 +29,7 @@ import { Job } from "@/lib/appwrite"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 
 export default function StudentDashboard() {
-  const { user, logout, isAuthenticated } = useAuth()
+  const { user, logout, isAuthenticated, isPlacementRep, isAdmin } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,13 +67,26 @@ export default function StudentDashboard() {
     }
   }
 
+  // Get file preview URL for images
+  const getFilePreviewUrl = (fileId: string) => {
+    if (!fileId) return "/placeholder-user.jpg"
+    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/preview?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+  }
+
   const calculateProfileCompletion = () => {
-    if (!user) return
+    if (!user || !user.profile) return
     
     let completion = 0
-    const fields = ['name', 'email', 'department', 'year', 'cgpa', 'phone']
+    const profile = user.profile
+    const fields = [
+      'firstName', 'lastName', 'email', 'department', 
+      'year', 'cgpa', 'phone', 'rollNumber', 'resume'
+    ]
+    
     fields.forEach(field => {
-      if (user[field]) completion += 16.67
+      if (profile[field] && profile[field].trim() !== '') {
+        completion += (100 / fields.length)
+      }
     })
     setProfileCompletion(Math.round(completion))
   }
@@ -88,22 +101,25 @@ export default function StudentDashboard() {
   }
 
   const isEligibleForJob = (job: Job) => {
-    if (!user) return { eligible: false, reason: "User not found" }
+    if (!user || !user.profile) return { eligible: false, reason: "User profile not found" }
     
-    const userCGPA = parseFloat(user.cgpa || "0")
+    const userCGPA = parseFloat(user.profile.cgpa || "0")
     const minCGPA = parseFloat(job.minCGPA)
     
     if (userCGPA < minCGPA) {
-      return { eligible: false, reason: `Minimum CGPA required: ${minCGPA}` }
+      return { eligible: false, reason: `Minimum CGPA required: ${minCGPA}, your CGPA: ${userCGPA}` }
     }
     
-    if (job.noBacklogs && user.hasBacklogs) {
-      return { eligible: false, reason: "No backlogs allowed" }
+    // Check backlogs - use new activeBacklog field
+    const hasActiveBacklogs = user.profile.activeBacklog === "Yes"
+    
+    if (job.noBacklogs && hasActiveBacklogs) {
+      return { eligible: false, reason: "No active backlogs allowed" }
     }
     
-    const userDept = user.department
+    const userDept = user.profile.department
     const allowedDepts = job.departments
-    if (!allowedDepts.includes(userDept)) {
+    if (!userDept || !allowedDepts.includes(userDept)) {
       return { eligible: false, reason: "Department not eligible" }
     }
     
@@ -139,6 +155,14 @@ export default function StudentDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {isPlacementRep && (
+                <Link href="/admin/dashboard">
+                  <Button variant="outline" size="sm">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Admin Panel
+                  </Button>
+                </Link>
+              )}
               <Button variant="ghost" size="sm">
                 <Bell className="w-4 h-4" />
               </Button>
@@ -159,7 +183,7 @@ export default function StudentDashboard() {
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={user?.profilePicture} />
+                <AvatarImage src={user?.profilePicture ? getFilePreviewUrl(user.profilePicture) : undefined} />
                 <AvatarFallback className="bg-blue-100 text-blue-600 text-xl font-semibold">
                   {user?.name
                     ?.split(" ")
@@ -218,10 +242,10 @@ export default function StudentDashboard() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{user?.cgpa || "N/A"}</div>
+                <div className="text-2xl font-bold">{user?.profile?.cgpa || "N/A"}</div>
                 <p className="text-xs text-muted-foreground">
-                  {user?.cgpa && parseFloat(user.cgpa) >= 8.0 ? "Excellent" : 
-                   user?.cgpa && parseFloat(user.cgpa) >= 7.0 ? "Good" : "Average"}
+                  {user?.profile?.cgpa && parseFloat(user.profile.cgpa) >= 8.0 ? "Excellent" : 
+                   user?.profile?.cgpa && parseFloat(user.profile.cgpa) >= 7.0 ? "Good" : "Average"}
                 </p>
               </CardContent>
             </Card>
@@ -396,6 +420,12 @@ export default function StudentDashboard() {
                     <Button variant="outline" className="w-full justify-start bg-transparent">
                       <Briefcase className="w-4 h-4 mr-2" />
                       Browse Jobs
+                    </Button>
+                  </Link>
+                  <Link href="/placements">
+                    <Button variant="outline" className="w-full justify-start bg-transparent">
+                      <GraduationCap className="w-4 h-4 mr-2" />
+                      View Placements
                     </Button>
                   </Link>
                 </CardContent>

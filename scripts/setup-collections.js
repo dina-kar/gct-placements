@@ -43,126 +43,211 @@ const config = {
     applications: process.env.NEXT_PUBLIC_APPWRITE_APPLICATIONS_COLLECTION_ID || 'applications',
     placements: process.env.NEXT_PUBLIC_APPWRITE_PLACEMENTS_COLLECTION_ID || 'placements',
     companies: process.env.NEXT_PUBLIC_APPWRITE_COMPANIES_COLLECTION_ID || 'companies',
+    admin_roles: process.env.NEXT_PUBLIC_APPWRITE_ADMIN_ROLES_COLLECTION_ID || 'admin_roles',
   }
 };
 
-// Collection schemas
-const collectionSchemas = {
-  users: {
-    name: 'Users',
-    attributes: [
-      { key: 'userId', type: 'string', size: 255, required: true },
-      { key: 'email', type: 'email', size: 255, required: true },
-      { key: 'firstName', type: 'string', size: 100, required: true },
-      { key: 'lastName', type: 'string', size: 100, required: true },
-      { key: 'phone', type: 'string', size: 20, required: false },
-      { key: 'rollNumber', type: 'string', size: 50, required: false },
-      { key: 'department', type: 'string', size: 255, required: false },
-      { key: 'year', type: 'string', size: 20, required: false },
-      { key: 'dateOfBirth', type: 'string', size: 20, required: false },
-      { key: 'address', type: 'string', size: 500, required: false },
-      { key: 'cgpa', type: 'string', size: 10, required: false },
-      { key: 'backlogs', type: 'string', size: 10, required: false },
-      { key: 'skills', type: 'string', size: 1000, required: false },
-      { key: 'projects', type: 'string', size: 2000, required: false },
-      { key: 'internships', type: 'string', size: 2000, required: false },
-      { key: 'achievements', type: 'string', size: 2000, required: false },
-      { key: 'bio', type: 'string', size: 1000, required: false },
-      { key: 'profilePicture', type: 'string', size: 255, required: false },
-      { key: 'resume', type: 'string', size: 255, required: false },
-      { key: 'role', type: 'enum', elements: ['student', 'placement_rep', 'placement_officer', 'placement_coordinator'], required: false },
-      { key: 'isPlacementRep', type: 'boolean', required: false, default: false },
-      { key: 'createdAt', type: 'string', size: 50, required: true },
-      { key: 'updatedAt', type: 'string', size: 50, required: true }
+// Schema definition
+const schema = {
+  storage: {
+    bucketId: 'placement-files',
+    name: 'Placement Files',
+    permissions: [
+      'read("users")',
+      'create("users")',
+      'update("users")',
+      'delete("users")'
     ],
-    indexes: [
-      { key: 'userId', type: 'key', attributes: ['userId'], orders: ['ASC'] },
-      { key: 'email', type: 'key', attributes: ['email'], orders: ['ASC'] },
-      { key: 'role', type: 'key', attributes: ['role'], orders: ['ASC'] }
-    ]
+    fileSizeLimit: 10485760, // 10MB
+    allowedFileExtensions: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx']
   },
-
-  jobs: {
-    name: 'Jobs',
-    attributes: [
-      { key: 'title', type: 'string', size: 255, required: true },
-      { key: 'company', type: 'string', size: 255, required: true },
-      { key: 'location', type: 'string', size: 255, required: true },
-      { key: 'jobType', type: 'string', size: 50, required: true },
-      { key: 'package', type: 'string', size: 100, required: true },
-      { key: 'description', type: 'string', size: 5000, required: true },
-      { key: 'responsibilities', type: 'string', size: 5000, required: true },
-      { key: 'qualifications', type: 'string', size: 5000, required: true },
-      { key: 'minCGPA', type: 'string', size: 10, required: true },
-      { key: 'noBacklogs', type: 'boolean', required: false, default: true },
-      { key: 'departments', type: 'string', size: 2000, required: true },
-      { key: 'applicationDeadline', type: 'string', size: 50, required: true },
-      { key: 'driveDate', type: 'string', size: 50, required: false },
-      { key: 'logo', type: 'string', size: 255, required: false },
-      { key: 'additionalDocuments', type: 'string', size: 255, required: false },
-      { key: 'status', type: 'enum', elements: ['active', 'closed', 'draft'], required: false, default: 'active' },
-      { key: 'createdBy', type: 'string', size: 255, required: true },
-      { key: 'createdAt', type: 'string', size: 50, required: true },
-      { key: 'updatedAt', type: 'string', size: 50, required: true }
-    ],
-    indexes: [
-      { key: 'status', type: 'key', attributes: ['status'], orders: ['ASC'] },
-      { key: 'company', type: 'key', attributes: ['company'], orders: ['ASC'] },
-      { key: 'createdAt', type: 'key', attributes: ['createdAt'], orders: ['DESC'] }
-    ]
-  },
-
-  applications: {
-    name: 'Applications',
-    attributes: [
-      { key: 'jobId', type: 'string', size: 255, required: true },
-      { key: 'userId', type: 'string', size: 255, required: true },
-      { key: 'status', type: 'enum', elements: ['applied', 'shortlisted', 'selected', 'rejected'], required: false, default: 'applied' },
-      { key: 'appliedAt', type: 'string', size: 50, required: true },
-      { key: 'updatedAt', type: 'string', size: 50, required: true }
-    ],
-    indexes: [
-      { key: 'jobId', type: 'key', attributes: ['jobId'], orders: ['ASC'] },
-      { key: 'userId', type: 'key', attributes: ['userId'], orders: ['ASC'] },
-      { key: 'status', type: 'key', attributes: ['status'], orders: ['ASC'] },
-      { key: 'appliedAt', type: 'key', attributes: ['appliedAt'], orders: ['DESC'] }
-    ]
-  },
-
-  placements: {
-    name: 'Placements',
-    attributes: [
-      { key: 'userId', type: 'string', size: 255, required: true },
-      { key: 'jobId', type: 'string', size: 255, required: true },
-      { key: 'company', type: 'string', size: 255, required: true },
-      { key: 'package', type: 'string', size: 100, required: true },
-      { key: 'placedAt', type: 'string', size: 50, required: true },
-      { key: 'createdAt', type: 'string', size: 50, required: true }
-    ],
-    indexes: [
-      { key: 'userId', type: 'key', attributes: ['userId'], orders: ['ASC'] },
-      { key: 'company', type: 'key', attributes: ['company'], orders: ['ASC'] },
-      { key: 'placedAt', type: 'key', attributes: ['placedAt'], orders: ['DESC'] }
-    ]
-  },
-
-  companies: {
-    name: 'Companies',
-    attributes: [
-      { key: 'name', type: 'string', size: 255, required: true },
-      { key: 'description', type: 'string', size: 2000, required: false },
-      { key: 'website', type: 'string', size: 255, required: false },
-      { key: 'logo', type: 'string', size: 255, required: false },
-      { key: 'location', type: 'string', size: 255, required: false },
-      { key: 'industry', type: 'string', size: 255, required: false },
-      { key: 'createdAt', type: 'string', size: 50, required: true },
-      { key: 'updatedAt', type: 'string', size: 50, required: true }
-    ],
-    indexes: [
-      { key: 'name', type: 'key', attributes: ['name'], orders: ['ASC'] }
-    ]
+  collections: {
+    users: {
+      name: 'Users',
+      permissions: [
+        'read("users")',
+        'create("users")',
+        'update("users")',
+        'delete("users")'
+      ],
+      attributes: [
+        { key: 'userId', type: 'string', size: 255, required: true },
+        { key: 'email', type: 'email', size: 255, required: true },
+        { key: 'firstName', type: 'string', size: 100, required: true },
+        { key: 'lastName', type: 'string', size: 100, required: true },
+        { key: 'phone', type: 'string', size: 20, required: false },
+        { key: 'rollNumber', type: 'string', size: 50, required: false },
+        { key: 'department', type: 'string', size: 255, required: false },
+        { key: 'year', type: 'string', size: 20, required: false },
+        { key: 'dateOfBirth', type: 'string', size: 20, required: false },
+        { key: 'address', type: 'string', size: 500, required: false },
+        { key: 'cgpa', type: 'string', size: 10, required: false },
+        { key: 'backlogs', type: 'string', size: 10, required: false },
+        { key: 'skills', type: 'string', size: 1000, required: false },
+        { key: 'projects', type: 'string', size: 2000, required: false },
+        { key: 'internships', type: 'string', size: 2000, required: false },
+        { key: 'achievements', type: 'string', size: 2000, required: false },
+        { key: 'bio', type: 'string', size: 1000, required: false },
+        { key: 'profilePicture', type: 'string', size: 255, required: false },
+        { key: 'resume', type: 'string', size: 255, required: false },
+        { key: 'isPlacementRep', type: 'boolean', required: false, default: false },
+        { key: 'role', type: 'string', size: 50, required: false, default: 'student' },
+        { key: 'createdAt', type: 'datetime', required: true },
+        { key: 'updatedAt', type: 'datetime', required: true }
+      ],
+      indexes: [
+        { key: 'userId_index', type: 'key', attributes: ['userId'], orders: ['ASC'] },
+        { key: 'email_index', type: 'key', attributes: ['email'], orders: ['ASC'] },
+        { key: 'role_index', type: 'key', attributes: ['role'], orders: ['ASC'] }
+      ]
+    },
+    admin_roles: {
+      name: 'Admin Roles',
+      permissions: [
+        'read("users")',
+        'create("users")',
+        'update("users")',
+        'delete("users")'
+      ],
+      attributes: [
+        { key: 'email', type: 'email', size: 255, required: true },
+        { key: 'role', type: 'string', size: 50, required: true },
+        { key: 'name', type: 'string', size: 255, required: true },
+        { key: 'department', type: 'string', size: 255, required: false },
+        { key: 'isActive', type: 'boolean', required: true, default: true },
+        { key: 'createdAt', type: 'datetime', required: true },
+        { key: 'updatedAt', type: 'datetime', required: true }
+      ],
+      indexes: [
+        { key: 'email_index', type: 'key', attributes: ['email'], orders: ['ASC'] },
+        { key: 'role_index', type: 'key', attributes: ['role'], orders: ['ASC'] },
+        { key: 'active_index', type: 'key', attributes: ['isActive'], orders: ['ASC'] }
+      ]
+    },
+    jobs: {
+      name: 'Jobs',
+      permissions: [
+        'read("users")',
+        'create("users")',
+        'update("users")',
+        'delete("users")'
+      ],
+      attributes: [
+        { key: 'title', type: 'string', size: 255, required: true },
+        { key: 'company', type: 'string', size: 255, required: true },
+        { key: 'location', type: 'string', size: 255, required: true },
+        { key: 'jobType', type: 'string', size: 50, required: true },
+        { key: 'package', type: 'string', size: 100, required: true },
+        { key: 'description', type: 'string', size: 5000, required: true },
+        { key: 'minCGPA', type: 'string', size: 10, required: true },
+        { key: 'noBacklogs', type: 'boolean', required: true },
+        { key: 'departments', type: 'string', size: 2000, required: true },
+        { key: 'applicationDeadline', type: 'string', size: 50, required: true },
+        { key: 'driveDate', type: 'string', size: 50, required: false },
+        { key: 'logo', type: 'string', size: 255, required: false },
+        { key: 'additionalDocuments', type: 'string', size: 255, required: false },
+        { key: 'status', type: 'string', size: 20, required: true, default: 'active' },
+        { key: 'createdBy', type: 'string', size: 255, required: true },
+        { key: 'createdAt', type: 'datetime', required: true },
+        { key: 'updatedAt', type: 'datetime', required: true }
+      ],
+      indexes: [
+        { key: 'company_index', type: 'key', attributes: ['company'], orders: ['ASC'] },
+        { key: 'status_index', type: 'key', attributes: ['status'], orders: ['ASC'] },
+        { key: 'deadline_index', type: 'key', attributes: ['applicationDeadline'], orders: ['ASC'] },
+        { key: 'created_index', type: 'key', attributes: ['createdAt'], orders: ['DESC'] }
+      ]
+    },
+    applications: {
+      name: 'Applications',
+      permissions: [
+        'read("users")',
+        'create("users")',
+        'update("users")',
+        'delete("users")'
+      ],
+      attributes: [
+        { key: 'jobId', type: 'string', size: 255, required: true },
+        { key: 'userId', type: 'string', size: 255, required: true },
+        { key: 'jobTitle', type: 'string', size: 255, required: true },
+        { key: 'company', type: 'string', size: 255, required: true },
+        { key: 'status', type: 'string', size: 50, required: true, default: 'applied' },
+        { key: 'coverLetter', type: 'string', size: 2000, required: false },
+        { key: 'additionalInfo', type: 'string', size: 1000, required: false },
+        { key: 'appliedAt', type: 'datetime', required: true },
+        { key: 'userName', type: 'string', size: 255, required: false },
+        { key: 'userEmail', type: 'email', size: 255, required: false },
+        { key: 'userRollNumber', type: 'string', size: 50, required: false },
+        { key: 'userDepartment', type: 'string', size: 255, required: false },
+        { key: 'userCGPA', type: 'string', size: 10, required: false },
+        { key: 'userResume', type: 'string', size: 255, required: false },
+        { key: 'createdAt', type: 'datetime', required: true },
+        { key: 'updatedAt', type: 'datetime', required: true }
+      ],
+      indexes: [
+        { key: 'job_index', type: 'key', attributes: ['jobId'], orders: ['ASC'] },
+        { key: 'user_index', type: 'key', attributes: ['userId'], orders: ['ASC'] },
+        { key: 'status_index', type: 'key', attributes: ['status'], orders: ['ASC'] },
+        { key: 'applied_index', type: 'key', attributes: ['appliedAt'], orders: ['DESC'] }
+      ]
+    },
+    placements: {
+      name: 'Placements',
+      permissions: [
+        'read("users")',
+        'create("users")',
+        'update("users")',
+        'delete("users")'
+      ],
+      attributes: [
+        { key: 'studentName', type: 'string', size: 255, required: true },
+        { key: 'studentId', type: 'string', size: 100, required: true },
+        { key: 'department', type: 'string', size: 255, required: true },
+        { key: 'batch', type: 'string', size: 20, required: true },
+        { key: 'company', type: 'string', size: 255, required: true },
+        { key: 'position', type: 'string', size: 255, required: true },
+        { key: 'package', type: 'string', size: 100, required: true },
+        { key: 'location', type: 'string', size: 255, required: false },
+        { key: 'joiningDate', type: 'string', size: 50, required: false },
+        { key: 'offerLetterDate', type: 'string', size: 50, required: true },
+        { key: 'testimonial', type: 'string', size: 2000, required: false },
+        { key: 'photo', type: 'string', size: 255, required: false },
+        { key: 'offerLetter', type: 'string', size: 255, required: false },
+        { key: 'createdAt', type: 'datetime', required: true },
+        { key: 'updatedAt', type: 'datetime', required: true }
+      ],
+      indexes: [
+        { key: 'student_index', type: 'key', attributes: ['studentId'], orders: ['ASC'] },
+        { key: 'company_index', type: 'key', attributes: ['company'], orders: ['ASC'] },
+        { key: 'batch_index', type: 'key', attributes: ['batch'], orders: ['ASC'] },
+        { key: 'department_index', type: 'key', attributes: ['department'], orders: ['ASC'] }
+      ]
+    },
+    companies: {
+      name: 'Companies',
+      permissions: [
+        'read("users")',
+        'create("users")',
+        'update("users")',
+        'delete("users")'
+      ],
+      attributes: [
+        { key: 'name', type: 'string', size: 255, required: true },
+        { key: 'description', type: 'string', size: 2000, required: false },
+        { key: 'website', type: 'url', size: 255, required: false },
+        { key: 'logo', type: 'string', size: 255, required: false },
+        { key: 'location', type: 'string', size: 255, required: false },
+        { key: 'industry', type: 'string', size: 255, required: false },
+        { key: 'createdAt', type: 'datetime', required: true },
+        { key: 'updatedAt', type: 'datetime', required: true }
+      ],
+      indexes: [
+        { key: 'name_index', type: 'key', attributes: ['name'], orders: ['ASC'] },
+        { key: 'industry_index', type: 'key', attributes: ['industry'], orders: ['ASC'] }
+      ]
+    }
   }
-};
+}
 
 // Helper functions
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -341,17 +426,17 @@ async function setupCollections() {
     await createStorageBucket();
     
     // Process each collection
-    for (const [collectionId, schema] of Object.entries(collectionSchemas)) {
+    for (const [collectionId, collectionSchema] of Object.entries(schema.collections)) {
       const actualCollectionId = config.collections[collectionId];
       
       // Create collection
-      const collectionCreated = await createCollection(actualCollectionId, schema);
+      const collectionCreated = await createCollection(actualCollectionId, collectionSchema);
       if (!collectionCreated) continue;
       
-      console.log(`\n📝 Adding attributes to ${schema.name}...`);
+      console.log(`\n📝 Adding attributes to ${collectionSchema.name}...`);
       
       // Create attributes
-      for (const attribute of schema.attributes) {
+      for (const attribute of collectionSchema.attributes) {
         await createAttribute(actualCollectionId, attribute);
       }
       
@@ -359,14 +444,14 @@ async function setupCollections() {
       console.log(`⏳ Waiting for attributes to be ready...`);
       await sleep(3000);
       
-      console.log(`\n🔍 Creating indexes for ${schema.name}...`);
+      console.log(`\n🔍 Creating indexes for ${collectionSchema.name}...`);
       
       // Create indexes
-      for (const index of schema.indexes) {
+      for (const index of collectionSchema.indexes) {
         await createIndex(actualCollectionId, index);
       }
       
-      console.log(`✅ Completed setup for ${schema.name}`);
+      console.log(`✅ Completed setup for ${collectionSchema.name}`);
     }
     
     console.log('\n🎉 All collections have been set up successfully!');
