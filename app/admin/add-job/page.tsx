@@ -14,15 +14,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Building2, ArrowLeft, Upload, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
+import { DatabaseService } from "@/lib/database"
+import { AdminRoute } from "@/components/ProtectedRoute"
 
 // Custom DatePicker component since it's not in shadcn by default
 function DatePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return <Input type="date" value={value} onChange={(e) => onChange(e.target.value)} />
 }
 
-export default function AddJobPage() {
+function AddJobPageContent() {
   const router = useRouter()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [message, setMessage] = useState({ type: "", text: "" })
 
   const [formData, setFormData] = useState({
@@ -32,15 +37,13 @@ export default function AddJobPage() {
     jobType: "Full-time",
     package: "",
     description: "",
-    responsibilities: "",
-    qualifications: "",
     minCGPA: "7.0",
     noBacklogs: true,
     departments: [] as string[],
     applicationDeadline: "",
     driveDate: "",
-    logo: null as File | null,
-    additionalDocuments: null as File | null,
+    logo: "",
+    additionalDocuments: "",
   })
 
   const departments = [
@@ -58,12 +61,28 @@ export default function AddJobPage() {
 
   const jobTypes = ["Full-time", "Internship", "Part-time", "Contract"]
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: "logo" | "additionalDocuments") => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: "logo" | "additionalDocuments") => {
     if (e.target.files && e.target.files[0]) {
-      setFormData({
-        ...formData,
-        [field]: e.target.files[0],
-      })
+      const file = e.target.files[0]
+      setIsUploading(true)
+      setMessage({ type: "", text: "" })
+
+      try {
+        const uploadResult = await DatabaseService.uploadFile(file)
+        
+        setFormData({
+          ...formData,
+          [field]: uploadResult.$id,
+        })
+        setMessage({
+          type: "success",
+          text: `${field === "logo" ? "Logo" : "Document"} uploaded successfully!`,
+        })
+      } catch (error: any) {
+        setMessage({ type: "error", text: error.message || "Failed to upload file" })
+      } finally {
+        setIsUploading(false)
+      }
     }
   }
 
@@ -92,8 +111,26 @@ export default function AddJobPage() {
         throw new Error("Please select at least one eligible department")
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Create job data
+              const jobData = {
+          title: formData.title,
+          company: formData.company,
+          location: formData.location,
+          jobType: formData.jobType,
+          package: formData.package,
+          description: formData.description,
+          minCGPA: formData.minCGPA,
+          noBacklogs: formData.noBacklogs,
+          departments: formData.departments,
+          applicationDeadline: formData.applicationDeadline,
+          driveDate: formData.driveDate,
+          logo: formData.logo,
+          additionalDocuments: formData.additionalDocuments,
+          status: 'active' as const,
+          createdBy: user.$id,
+        }
+
+      const result = await DatabaseService.createJob(jobData)
 
       setMessage({
         type: "success",
@@ -102,7 +139,7 @@ export default function AddJobPage() {
 
       // Reset form or redirect after successful submission
       setTimeout(() => {
-        router.push("/admin/jobs")
+        router.push("/admin/dashboard")
       }, 2000)
     } catch (error: any) {
       setMessage({
@@ -250,9 +287,14 @@ export default function AddJobPage() {
                         onChange={(e) => handleFileChange(e, "logo")}
                         className="flex-1"
                       />
-                      <Button type="button" variant="outline" onClick={() => document.getElementById("logo")?.click()}>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => document.getElementById("logo")?.click()}
+                        disabled={isUploading}
+                      >
                         <Upload className="w-4 h-4 mr-2" />
-                        Browse
+                        {isUploading ? "Uploading..." : "Browse"}
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500">Upload company logo (JPEG, PNG, max 2MB)</p>
@@ -267,38 +309,13 @@ export default function AddJobPage() {
                     <Label htmlFor="description">Job Description *</Label>
                     <Textarea
                       id="description"
-                      placeholder="Provide a detailed description of the job..."
+                      placeholder="Provide a detailed description of the job including responsibilities and qualifications..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={4}
+                      rows={8}
                       required
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="responsibilities">Responsibilities *</Label>
-                    <Textarea
-                      id="responsibilities"
-                      placeholder="List the key responsibilities of the role..."
-                      value={formData.responsibilities}
-                      onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
-                      rows={4}
-                      required
-                    />
-                    <p className="text-xs text-gray-500">Enter each responsibility on a new line</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="qualifications">Qualifications *</Label>
-                    <Textarea
-                      id="qualifications"
-                      placeholder="List the required qualifications..."
-                      value={formData.qualifications}
-                      onChange={(e) => setFormData({ ...formData, qualifications: e.target.value })}
-                      rows={4}
-                      required
-                    />
-                    <p className="text-xs text-gray-500">Enter each qualification on a new line</p>
+                    <p className="text-xs text-gray-500">Include job responsibilities, qualifications, and requirements in the description</p>
                   </div>
                 </div>
 
@@ -398,9 +415,10 @@ export default function AddJobPage() {
                         type="button"
                         variant="outline"
                         onClick={() => document.getElementById("additionalDocuments")?.click()}
+                        disabled={isUploading}
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        Browse
+                        {isUploading ? "Uploading..." : "Browse"}
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500">Upload any additional documents (PDF, DOC, max 5MB)</p>
@@ -421,5 +439,13 @@ export default function AddJobPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AddJobPage() {
+  return (
+    <AdminRoute>
+      <AddJobPageContent />
+    </AdminRoute>
   )
 }

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Users,
   Briefcase,
@@ -19,386 +20,455 @@ import {
   Edit,
   LogOut,
   Settings,
+  Filter,
+  FileText,
+  Clock,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
+import { DatabaseService } from "@/lib/database"
+import { Job, Application } from "@/lib/appwrite"
+import { AdminRoute } from "@/components/ProtectedRoute"
 
 export default function AdminDashboard() {
-  const [admin, setAdmin] = useState<any>(null)
+  const { user, logout } = useAuth()
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
+  const [selectedJob, setSelectedJob] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterDepartment, setFilterDepartment] = useState("all")
+  const [filterStatus, setFilterStatus] = useState("all")
+  const [selectedApplications, setSelectedApplications] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    const adminData = localStorage.getItem("admin")
-    if (!adminData) {
-      router.push("/admin/login")
+    fetchData()
+  }, [])
+
+  useEffect(() => {
+    if (selectedJob !== "all") {
+      fetchJobApplications(selectedJob)
+    } else {
+      fetchAllApplications()
+    }
+  }, [selectedJob])
+
+  const fetchData = async () => {
+    try {
+      const [jobsData] = await Promise.all([
+        DatabaseService.getJobs()
+      ])
+      setJobs(jobsData)
+      await fetchAllApplications()
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchAllApplications = async () => {
+    try {
+      // Since we don't have a getAllApplications method, we'll fetch for each job
+      const allApplications: Application[] = []
+      for (const job of jobs) {
+        const jobApps = await DatabaseService.getJobApplications(job.$id)
+        allApplications.push(...jobApps)
+      }
+      setApplications(allApplications)
+    } catch (error) {
+      console.error('Error fetching applications:', error)
+    }
+  }
+
+  const fetchJobApplications = async (jobId: string) => {
+    try {
+      const jobApplications = await DatabaseService.getJobApplications(jobId)
+      setApplications(jobApplications)
+    } catch (error) {
+      console.error('Error fetching job applications:', error)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push("/")
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
+  }
+
+  const handleStatusUpdate = async (applicationId: string, newStatus: string) => {
+    try {
+      await DatabaseService.updateApplicationStatus(applicationId, newStatus)
+      // Refresh applications
+      if (selectedJob !== "all") {
+        fetchJobApplications(selectedJob)
+      } else {
+        fetchAllApplications()
+      }
+    } catch (error) {
+      console.error('Error updating application status:', error)
+    }
+  }
+
+  const handleExportData = () => {
+    const filteredApplications = getFilteredApplications()
+    
+    if (filteredApplications.length === 0) {
+      alert("No applications to export")
       return
     }
-    setAdmin(JSON.parse(adminData))
-  }, [router])
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin")
-    router.push("/")
+    // Create CSV data
+    const headers = ["Name", "Roll Number", "Department", "CGPA", "Job Title", "Company", "Status", "Applied Date", "Resume Link"]
+    const csvData = [
+      headers,
+      ...filteredApplications.map(app => [
+        app.userName || "N/A",
+        app.userRollNumber || "N/A", 
+        app.userDepartment || "N/A",
+        app.userCGPA || "N/A",
+        app.jobTitle || "N/A",
+        app.company || "N/A",
+        app.status || "N/A",
+        new Date(app.appliedAt).toLocaleDateString(),
+        app.userResume || "N/A"
+      ])
+    ]
+
+    // Convert to CSV string
+    const csvString = csvData.map(row => row.join(",")).join("\n")
+    
+    // Download CSV
+    const blob = new Blob([csvString], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `applications_${selectedJob !== "all" ? jobs.find(j => j.$id === selectedJob)?.title || "all" : "all"}_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
   }
 
-  const students = [
-    {
-      id: 1,
-      name: "John Doe",
-      rollNumber: "21CS001",
-      department: "Computer Science and Engineering",
-      year: "4th Year",
-      cgpa: 8.2,
-      email: "john.doe@gct.ac.in",
-      phone: "+91 9876543210",
-      applications: 5,
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      rollNumber: "21IT002",
-      department: "Information Technology",
-      year: "4th Year",
-      cgpa: 8.7,
-      email: "jane.smith@gct.ac.in",
-      phone: "+91 9876543211",
-      applications: 8,
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      rollNumber: "21EC003",
-      department: "Electronics and Communication Engineering",
-      year: "4th Year",
-      cgpa: 7.9,
-      email: "mike.johnson@gct.ac.in",
-      phone: "+91 9876543212",
-      applications: 3,
-      status: "Active",
-    },
-  ]
-
-  const jobs = [
-    {
-      id: 1,
-      title: "Software Engineer",
-      company: "TCS",
-      location: "Chennai",
-      salary: "₹6-8 LPA",
-      minCGPA: 7.0,
-      deadline: "2024-02-15",
-      applications: 45,
-      status: "Active",
-    },
-    {
-      id: 2,
-      title: "Frontend Developer",
-      company: "Infosys",
-      location: "Bangalore",
-      salary: "₹5-7 LPA",
-      minCGPA: 6.5,
-      deadline: "2024-02-20",
-      applications: 32,
-      status: "Active",
-    },
-    {
-      id: 3,
-      title: "Data Analyst",
-      company: "Wipro",
-      location: "Coimbatore",
-      salary: "₹4-6 LPA",
-      minCGPA: 7.5,
-      deadline: "2024-02-25",
-      applications: 28,
-      status: "Draft",
-    },
-  ]
-
-  const departments = [
-    "Computer Science and Engineering",
-    "Information Technology",
-    "Electronics and Communication Engineering",
-    "Electrical and Electronics Engineering",
-    "Mechanical Engineering",
-    "Civil Engineering",
-  ]
-
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.rollNumber.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDepartment = filterDepartment === "all" || student.department === filterDepartment
-    return matchesSearch && matchesDepartment
-  })
-
-  const exportStudentData = () => {
-    // Mock export functionality
-    const csvData = filteredStudents.map((student) => ({
-      Name: student.name,
-      RollNumber: student.rollNumber,
-      Department: student.department,
-      CGPA: student.cgpa,
-      Email: student.email,
-      Phone: student.phone,
-      Applications: student.applications,
-    }))
-
-    console.log("Exporting data:", csvData)
-    alert("Student data exported successfully!")
+  const getFilteredApplications = () => {
+    return applications.filter(app => {
+      const matchesSearch = !searchTerm || 
+        (app.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         app.userRollNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         app.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         app.company?.toLowerCase().includes(searchTerm.toLowerCase()))
+      
+      const matchesStatus = filterStatus === "all" || app.status === filterStatus
+      
+      return matchesSearch && matchesStatus
+    })
   }
 
-  if (!admin) {
-    return <div>Loading...</div>
+  const getStats = () => {
+    const totalApplications = applications.length
+    const pendingApplications = applications.filter(app => app.status === 'applied').length
+    const interviewScheduled = applications.filter(app => app.status === 'interview_scheduled').length
+    const selectedCandidates = applications.filter(app => app.status === 'selected').length
+    
+    return {
+      total: totalApplications,
+      pending: pendingApplications,
+      interviews: interviewScheduled,
+      selected: selectedCandidates
+    }
   }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>Loading dashboard...</div>
+      </div>
+    )
+  }
+
+  const stats = getStats()
+  const filteredApplications = getFilteredApplications()
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
+    <AdminRoute>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
+                <p className="text-sm text-gray-600">Admin Dashboard</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
-              <p className="text-sm text-gray-600">Admin Dashboard</p>
+            <div className="flex items-center gap-4">
+              <Link href="/admin/add-job">
+                <Button variant="outline" size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Job
+                </Button>
+              </Link>
+              <Button variant="ghost" size="sm">
+                <Settings className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm">
-              <Settings className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
+        </header>
+
+        <div className="container mx-auto px-4 py-8">
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.name || "Admin"}!</h1>
+            <p className="text-gray-600">Manage job applications and track placement progress</p>
           </div>
-        </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {admin.name || "Admin"}!</h1>
-          <p className="text-gray-600">Manage student placements and job postings</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">1,247</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">23</div>
-              <p className="text-xs text-muted-foreground">5 new this week</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Applications</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">856</div>
-              <p className="text-xs text-muted-foreground">+23% from last week</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Placement Rate</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">87%</div>
-              <p className="text-xs text-muted-foreground">+5% from last year</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Student Management */}
-          <div className="lg:col-span-2">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Student Management
-                    </CardTitle>
-                    <CardDescription>View and manage student profiles and data</CardDescription>
-                  </div>
-                  <Button onClick={exportStudentData}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Data
-                  </Button>
-                </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {/* Search and Filter */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search students..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-                    <SelectTrigger className="w-full sm:w-[250px]">
-                      <SelectValue placeholder="Filter by department" />
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <p className="text-xs text-muted-foreground">Across all positions</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.pending}</div>
+                <p className="text-xs text-muted-foreground">Require attention</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Interviews</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.interviews}</div>
+                <p className="text-xs text-muted-foreground">Scheduled</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Selected</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.selected}</div>
+                <p className="text-xs text-muted-foreground">Candidates</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Applications Management */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Job Applications Management
+                  </CardTitle>
+                  <CardDescription>Review and manage job applications from students</CardDescription>
+                </div>
+                <Button onClick={handleExportData} disabled={filteredApplications.length === 0}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Data
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Filters */}
+              <div className="flex flex-col lg:flex-row gap-4 mb-6">
+                <div className="flex-1">
+                  <Select value={selectedJob} onValueChange={setSelectedJob}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select job position" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Departments</SelectItem>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="all">All Positions ({applications.length} applications)</SelectItem>
+                      {jobs.map((job) => {
+                        const jobApps = applications.filter(app => app.jobId === job.$id)
+                        return (
+                          <SelectItem key={job.$id} value={job.$id}>
+                            {job.title} - {job.company} ({jobApps.length} applications)
+                          </SelectItem>
+                        )
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search applicants..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                  
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="applied">Applied</SelectItem>
+                      <SelectItem value="under_review">Under Review</SelectItem>
+                      <SelectItem value="interview_scheduled">Interview Scheduled</SelectItem>
+                      <SelectItem value="selected">Selected</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                {/* Student List */}
-                <div className="space-y-4">
-                  {filteredStudents.map((student) => (
-                    <div key={student.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              {/* Applications List */}
+              <div className="space-y-4">
+                {filteredApplications.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No applications found for the selected criteria.</p>
+                  </div>
+                ) : (
+                  filteredApplications.map((application) => (
+                    <div key={application.$id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-semibold text-lg">{student.name}</h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                            <span>{student.rollNumber}</span>
-                            <span>{student.department}</span>
-                            <Badge variant="outline">CGPA: {student.cgpa}</Badge>
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={selectedApplications.includes(application.$id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedApplications([...selectedApplications, application.$id])
+                              } else {
+                                setSelectedApplications(selectedApplications.filter(id => id !== application.$id))
+                              }
+                            }}
+                          />
+                          <div>
+                            <h3 className="font-semibold text-lg">{application.userName || "Unknown Student"}</h3>
+                            <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                              <span>Roll: {application.userRollNumber || "N/A"}</span>
+                              <span>Dept: {application.userDepartment || "N/A"}</span>
+                              <span>CGPA: {application.userCGPA || "N/A"}</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                              <span className="font-medium">{application.jobTitle}</span>
+                              <span>@ {application.company}</span>
+                            </div>
                           </div>
                         </div>
-                        <Badge variant={student.status === "Active" ? "default" : "secondary"}>{student.status}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={application.status}
+                            onValueChange={(newStatus) => handleStatusUpdate(application.$id, newStatus)}
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="applied">Applied</SelectItem>
+                              <SelectItem value="under_review">Under Review</SelectItem>
+                              <SelectItem value="interview_scheduled">Interview Scheduled</SelectItem>
+                              <SelectItem value="selected">Selected</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Badge
+                            variant={
+                              application.status === "selected"
+                                ? "default"
+                                : application.status === "interview_scheduled"
+                                  ? "secondary"
+                                  : application.status === "rejected"
+                                    ? "destructive"
+                                    : "outline"
+                            }
+                          >
+                            {application.status.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                        <span>{student.email}</span>
-                        <span>{student.phone}</span>
-                        <span>{student.applications} applications</span>
+                        <span>Applied: {new Date(application.appliedAt).toLocaleDateString()}</span>
+                        {application.userResume && (
+                          <a 
+                            href={application.userResume} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            View Resume
+                          </a>
+                        )}
                       </div>
+
+                      {application.coverLetter && (
+                        <div className="bg-gray-50 rounded p-3 mb-3">
+                          <h4 className="font-medium text-sm text-gray-900 mb-1">Cover Letter:</h4>
+                          <p className="text-sm text-gray-700 line-clamp-3">{application.coverLetter}</p>
+                        </div>
+                      )}
 
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline">
                           <Eye className="w-4 h-4 mr-1" />
-                          View
+                          View Details
                         </Button>
                         <Button size="sm" variant="outline">
-                          <Edit className="w-4 h-4 mr-1" />
-                          Edit
+                          <FileText className="w-4 h-4 mr-1" />
+                          Download Resume
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
+              </div>
 
-                <div className="text-center pt-4">
-                  <Button variant="outline">View All Students</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Job Management */}
-          <div>
-            <Card className="mb-6">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="w-5 h-5" />
-                    Job Postings
-                  </CardTitle>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-1" />
-                    New Job
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {jobs.map((job) => (
-                  <div key={job.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium">{job.title}</h4>
-                      <Badge variant={job.status === "Active" ? "default" : "secondary"}>{job.status}</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {job.company} • {job.location}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{job.applications} applications</span>
-                      <span>Due: {job.deadline}</span>
-                    </div>
-                    <div className="flex gap-1 mt-3">
-                      <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                        <Eye className="w-3 h-3 mr-1" />
-                        View
+              {/* Bulk Actions */}
+              {selectedApplications.length > 0 && (
+                <div className="border-t pt-4 mt-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                      {selectedApplications.length} application(s) selected
+                    </span>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        Bulk Update Status
                       </Button>
-                      <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                        <Edit className="w-3 h-3 mr-1" />
-                        Edit
+                      <Button size="sm" variant="outline">
+                        Export Selected
                       </Button>
                     </div>
                   </div>
-                ))}
-
-                <div className="text-center pt-4">
-                  <Button variant="outline" size="sm">
-                    View All Jobs
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Job Posting
-                </Button>
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export Reports
-                </Button>
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <Users className="w-4 h-4 mr-2" />
-                  Manage Students
-                </Button>
-                <Button variant="outline" className="w-full justify-start bg-transparent">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  View Analytics
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </div>
+    </AdminRoute>
   )
 }

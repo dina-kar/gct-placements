@@ -6,7 +6,10 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "setup:appwrite": "node scripts/setup-collections.js",
+    "setup:attributes": "node scripts/setup-attributes-only.js",
+    "setup:optimized": "node scripts/setup-attributes-optimized.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -65,6 +68,8 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.1",
+    "node-appwrite": "^17.2.0",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"

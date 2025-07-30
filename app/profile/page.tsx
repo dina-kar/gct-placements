@@ -12,78 +12,124 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { User, GraduationCap, Upload, FileText, Save, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
+import { DatabaseService } from "@/lib/database"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
 
-export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null)
+function ProfilePageContent() {
+  const { user } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [message, setMessage] = useState({ type: "", text: "" })
   const router = useRouter()
 
   const [profileData, setProfileData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@gct.ac.in",
-    phone: "+91 9876543210",
-    rollNumber: "21CS001",
-    department: "Computer Science and Engineering",
-    year: "4th Year",
-    dateOfBirth: "2002-05-15",
-    address: "123 Main Street, Coimbatore, Tamil Nadu",
-    cgpa: "8.2",
-    backlogs: "0",
-    skills: "JavaScript, React, Node.js, Python, Java",
-    projects: "E-commerce Website, Chat Application, Data Analysis Tool",
-    internships: "Summer Intern at TCS (2023)",
-    achievements: "Dean's List, Coding Competition Winner",
-    bio: "Passionate computer science student with strong programming skills and experience in web development.",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    rollNumber: "",
+    department: "",
+    year: "",
+    dateOfBirth: "",
+    address: "",
+    cgpa: "",
+    backlogs: "",
+    skills: "",
+    projects: "",
+    internships: "",
+    achievements: "",
+    bio: "",
+    profilePicture: "",
+    resume: "",
   })
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (!userData) {
-      router.push("/login")
-      return
+    if (user?.profile) {
+      setProfileData({
+        firstName: user.profile.firstName || "",
+        lastName: user.profile.lastName || "",
+        email: user.profile.email || "",
+        phone: user.profile.phone || "",
+        rollNumber: user.profile.rollNumber || "",
+        department: user.profile.department || "",
+        year: user.profile.year || "",
+        dateOfBirth: user.profile.dateOfBirth || "",
+        address: user.profile.address || "",
+        cgpa: user.profile.cgpa || "",
+        backlogs: user.profile.backlogs || "0",
+        skills: user.profile.skills || "",
+        projects: user.profile.projects || "",
+        internships: user.profile.internships || "",
+        achievements: user.profile.achievements || "",
+        bio: user.profile.bio || "",
+        profilePicture: user.profile.profilePicture || "",
+        resume: user.profile.resume || "",
+      })
     }
-    setUser(JSON.parse(userData))
-  }, [router])
+  }, [user])
 
   const handleSave = async () => {
     setIsSaving(true)
     setMessage({ type: "", text: "" })
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      setMessage({ type: "success", text: "Profile updated successfully!" })
-      setIsEditing(false)
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to update profile. Please try again." })
+      const result = await DatabaseService.updateUserProfile(user.$id, profileData)
+      
+      if (result.success) {
+        setMessage({ type: "success", text: result.message })
+        setIsEditing(false)
+      } else {
+        setMessage({ type: "error", text: result.message })
+      }
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || "Failed to update profile. Please try again." })
     } finally {
       setIsSaving(false)
     }
   }
 
-  const handleFileUpload = (type: string) => {
-    // Simulate file upload
+  const handleFileUpload = async (type: 'resume' | 'profilePicture') => {
     const input = document.createElement("input")
     input.type = "file"
     input.accept = type === "resume" ? ".pdf,.doc,.docx" : "image/*"
-    input.onchange = (e) => {
+    
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        setMessage({
-          type: "success",
-          text: `${type === "resume" ? "Resume" : "Profile picture"} uploaded successfully!`,
-        })
+      if (!file) return
+
+      setIsUploading(true)
+      setMessage({ type: "", text: "" })
+
+      try {
+        const uploadResult = await DatabaseService.uploadFile(file)
+        
+        if (uploadResult.success && uploadResult.fileId) {
+          // Update profile data with new file ID
+          const updatedData = { [type]: uploadResult.fileId }
+          const updateResult = await DatabaseService.updateUserProfile(user.$id, updatedData)
+          
+          if (updateResult.success) {
+            setProfileData(prev => ({ ...prev, [type]: uploadResult.fileId! }))
+            setMessage({
+              type: "success",
+              text: `${type === "resume" ? "Resume" : "Profile picture"} uploaded successfully!`,
+            })
+          } else {
+            setMessage({ type: "error", text: updateResult.message })
+          }
+        } else {
+          setMessage({ type: "error", text: uploadResult.message })
+        }
+      } catch (error: any) {
+        setMessage({ type: "error", text: error.message || "Failed to upload file" })
+      } finally {
+        setIsUploading(false)
       }
     }
+    
     input.click()
-  }
-
-  if (!user) {
-    return <div>Loading...</div>
   }
 
   return (
@@ -167,15 +213,20 @@ export default function ProfilePage() {
                 <Button
                   variant="outline"
                   className="w-full bg-transparent"
-                  onClick={() => handleFileUpload("photo")}
-                  disabled={!isEditing}
+                  onClick={() => handleFileUpload("profilePicture")}
+                  disabled={!isEditing || isUploading}
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Update Photo
+                  {isUploading ? "Uploading..." : "Update Photo"}
                 </Button>
-                <Button variant="outline" className="w-full bg-transparent" onClick={() => handleFileUpload("resume")}>
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-transparent" 
+                  onClick={() => handleFileUpload("resume")}
+                  disabled={isUploading}
+                >
                   <FileText className="w-4 h-4 mr-2" />
-                  Upload Resume
+                  {isUploading ? "Uploading..." : "Upload Resume"}
                 </Button>
               </CardContent>
             </Card>
@@ -398,5 +449,13 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <ProtectedRoute>
+      <ProfilePageContent />
+    </ProtectedRoute>
   )
 }
