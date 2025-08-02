@@ -28,13 +28,13 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { DatabaseService } from "@/lib/database"
-import { Job, Application } from "@/lib/appwrite"
+import { Job, Application, ApplicationWithUserData } from "@/lib/appwrite"
 import { AdminRoute } from "@/components/ProtectedRoute"
 
 export default function AdminDashboard() {
   const { user, logout, isPlacementRep, hasStudentAccess, isPlacementCoordinator } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
-  const [applications, setApplications] = useState<Application[]>([])
+  const [applications, setApplications] = useState<ApplicationWithUserData[]>([])
   const [selectedJob, setSelectedJob] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
@@ -70,12 +70,7 @@ export default function AdminDashboard() {
 
   const fetchAllApplications = async () => {
     try {
-      // Since we don't have a getAllApplications method, we'll fetch for each job
-      const allApplications: Application[] = []
-      for (const job of jobs) {
-        const jobApps = await DatabaseService.getJobApplications(job.$id)
-        allApplications.push(...jobApps)
-      }
+      const allApplications = await DatabaseService.getAllApplicationsWithUserData()
       setApplications(allApplications)
     } catch (error) {
       console.error('Error fetching applications:', error)
@@ -84,7 +79,7 @@ export default function AdminDashboard() {
 
   const fetchJobApplications = async (jobId: string) => {
     try {
-      const jobApplications = await DatabaseService.getJobApplications(jobId)
+      const jobApplications = await DatabaseService.getJobApplicationsWithUserData(jobId)
       setApplications(jobApplications)
     } catch (error) {
       console.error('Error fetching job applications:', error)

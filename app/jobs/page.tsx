@@ -80,7 +80,7 @@ export default function JobsPage() {
   const isEligibleForJob = (job: Job) => {
     if (!user || !user.profile) return { eligible: false, reason: "User profile not found" }
     
-    const userCGPA = parseFloat(user.profile.cgpa || "0")
+    const userCGPA = parseFloat(user.profile.currentCgpa || "0")
     const minCGPA = parseFloat(job.minCGPA)
     
     if (userCGPA < minCGPA) {

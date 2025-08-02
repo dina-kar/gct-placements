@@ -87,7 +87,7 @@ export default function ApplyJobPage() {
   const isEligibleForJob = (job: Job) => {
     if (!user || !user.profile || !job) return { eligible: false, reason: "User profile not found" }
     
-    const userCGPA = parseFloat(user.profile.cgpa || "0")
+    const userCGPA = parseFloat(user.profile.currentCgpa || "0")
     const minCGPA = parseFloat(job.minCGPA)
     
     if (userCGPA < minCGPA) {
@@ -244,7 +244,7 @@ export default function ApplyJobPage() {
                         <Label htmlFor="name">Full Name</Label>
                         <Input
                           id="name"
-                          value={user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : user?.name || ""}
+                          value={user?.profile?.fullName || user?.name || ""}
                           disabled
                           className="bg-gray-50"
                         />
@@ -259,10 +259,10 @@ export default function ApplyJobPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="rollNumber">Roll Number</Label>
+                        <Label htmlFor="rollNo">Roll Number</Label>
                         <Input
-                          id="rollNumber"
-                          value={user?.profile?.rollNumber || ""}
+                          id="rollNo"
+                          value={user?.profile?.rollNo || ""}
                           disabled
                           className="bg-gray-50"
                         />
@@ -280,7 +280,7 @@ export default function ApplyJobPage() {
                         <Label htmlFor="cgpa">CGPA</Label>
                         <Input
                           id="cgpa"
-                          value={user?.profile?.cgpa || ""}
+                          value={user?.profile?.currentCgpa || ""}
                           disabled
                           className="bg-gray-50"
                         />

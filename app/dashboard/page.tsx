@@ -17,7 +17,6 @@ import {
   DollarSign,
   Building2,
   GraduationCap,
-  Bell,
   Settings,
   LogOut,
 } from "lucide-react"
@@ -79,8 +78,8 @@ export default function StudentDashboard() {
     let completion = 0
     const profile = user.profile
     const fields = [
-      'firstName', 'lastName', 'email', 'department', 
-      'year', 'cgpa', 'phone', 'rollNumber', 'resume'
+      'fullName', 'collegeEmail', 'department', 
+      'batch', 'currentCgpa', 'phoneNo', 'rollNo', 'resume'
     ]
     
     fields.forEach(field => {
@@ -103,7 +102,7 @@ export default function StudentDashboard() {
   const isEligibleForJob = (job: Job) => {
     if (!user || !user.profile) return { eligible: false, reason: "User profile not found" }
     
-    const userCGPA = parseFloat(user.profile.cgpa || "0")
+    const userCGPA = parseFloat(user.profile.currentCgpa || "0")
     const minCGPA = parseFloat(job.minCGPA)
     
     if (userCGPA < minCGPA) {
@@ -163,9 +162,7 @@ export default function StudentDashboard() {
                   </Button>
                 </Link>
               )}
-              <Button variant="ghost" size="sm">
-                <Bell className="w-4 h-4" />
-              </Button>
+              
               <Link href="/profile">
                 <Button variant="ghost" size="sm">
                   <Settings className="w-4 h-4" />
@@ -242,10 +239,10 @@ export default function StudentDashboard() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{user?.profile?.cgpa || "N/A"}</div>
+                <div className="text-2xl font-bold">{user?.profile?.currentCgpa || "N/A"}</div>
                 <p className="text-xs text-muted-foreground">
-                  {user?.profile?.cgpa && parseFloat(user.profile.cgpa) >= 8.0 ? "Excellent" : 
-                   user?.profile?.cgpa && parseFloat(user.profile.cgpa) >= 7.0 ? "Good" : "Average"}
+                  {user?.profile?.currentCgpa && parseFloat(user.profile.currentCgpa) >= 8.0 ? "Excellent" : 
+                   user?.profile?.currentCgpa && parseFloat(user.profile.currentCgpa) >= 7.0 ? "Good" : "Average"}
                 </p>
               </CardContent>
             </Card>

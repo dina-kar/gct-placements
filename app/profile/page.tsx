@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   User, 
   FileText, 
@@ -25,13 +26,20 @@ import {
   ArrowLeft,
   Download,
   Eye,
-  Trash2
+  Trash2,
+  GraduationCap,
+  MapPin,
+  Phone,
+  Mail,
+  Github,
+  Linkedin
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { DatabaseService } from "@/lib/database"
 import { StudentRoute } from "@/components/ProtectedRoute"
+import { UserRole } from "@/lib/appwrite"
 
 function ProfilePageContent() {
   const { user } = useAuth()
@@ -39,31 +47,51 @@ function ProfilePageContent() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [message, setMessage] = useState({ type: "", text: "" })
-  const [showResumePreview, setShowResumePreview] = useState(false)
   const router = useRouter()
 
   const [profileData, setProfileData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
+    fullName: "",
+    collegeEmail: "",
     personalEmail: "",
-    rollNumber: "",
-    department: "",
-    year: "",
+    role: UserRole.STUDENT,
+    isPlacementRep: false,
+    // Personal Details
     dateOfBirth: "",
-    address: "",
-    cgpa: "",
-    backlogs: "",
+    gender: "",
+    phoneNo: "",
+    parentsName: "",
+    parentsNo: "",
+    currentAddress: "",
+    permanentAddress: "",
+    city: "",
+    country: "India",
+    aadharNo: "",
+    pancardNo: "",
+    bio: "",
+    // Academic Information
+    rollNo: "",
+    batch: "",
+    department: "",
+    currentCgpa: "",
+    tenthMarkPercent: "",
+    twelthMarkPercent: "",
+    diplomaMarkPercent: "",
+    sem1Cgpa: "",
+    sem2Cgpa: "",
+    sem3Cgpa: "",
+    sem4Cgpa: "",
+    sem5Cgpa: "",
+    sem6Cgpa: "",
+    sem7Cgpa: "",
+    sem8Cgpa: "",
     historyOfArrear: "No",
     activeBacklog: "No",
-    skills: "",
-    projects: "",
-    internships: "",
-    achievements: "",
-    bio: "",
+    noOfBacklogs: "0",
+    // Files and Profiles
     profilePicture: "",
     resume: "",
+    githubProfile: "",
+    linkedInProfile: "",
   })
 
   const departments = [
@@ -78,60 +106,73 @@ function ProfilePageContent() {
     "Industrial Biotechnology",
   ]
 
-  const years = ["2025", "2026", "2027", "2028"]
+  const batches = ["2021-2025", "2022-2026", "2023-2027", "2024-2028", "2025-2029"]
+  const genders = ["Male", "Female", "Other"]
+  const semesterLabels = ["Semester 1", "Semester 2", "Semester 3", "Semester 4", "Semester 5", "Semester 6", "Semester 7", "Semester 8"]
 
   useEffect(() => {
     if (user?.profile) {
       setProfileData({
-        firstName: user.profile.firstName || "",
-        lastName: user.profile.lastName || "",
-        email: user.profile.email || "",
-        phone: user.profile.phone || "",
+        fullName: user.profile.fullName || "",
+        collegeEmail: user.profile.collegeEmail || "",
         personalEmail: user.profile.personalEmail || "",
-        rollNumber: user.profile.rollNumber || "",
-        department: user.profile.department || "",
-        year: user.profile.year || "",
+        role: user.profile.role || UserRole.STUDENT,
+        isPlacementRep: user.profile.isPlacementRep || false,
+        // Personal Details
         dateOfBirth: user.profile.dateOfBirth || "",
-        address: user.profile.address || "",
-        cgpa: user.profile.cgpa || "",
-        backlogs: user.profile.backlogs || "0",
+        gender: user.profile.gender || "",
+        phoneNo: user.profile.phoneNo || "",
+        parentsName: user.profile.parentsName || "",
+        parentsNo: user.profile.parentsNo || "",
+        currentAddress: user.profile.currentAddress || "",
+        permanentAddress: user.profile.permanentAddress || "",
+        city: user.profile.city || "",
+        country: user.profile.country || "India",
+        aadharNo: user.profile.aadharNo || "",
+        pancardNo: user.profile.pancardNo || "",
+        bio: user.profile.bio || "",
+        // Academic Information
+        rollNo: user.profile.rollNo || "",
+        batch: user.profile.batch || "",
+        department: user.profile.department || "",
+        currentCgpa: user.profile.currentCgpa || "",
+        tenthMarkPercent: user.profile.tenthMarkPercent || "",
+        twelthMarkPercent: user.profile.twelthMarkPercent || "",
+        diplomaMarkPercent: user.profile.diplomaMarkPercent || "",
+        sem1Cgpa: user.profile.sem1Cgpa || "",
+        sem2Cgpa: user.profile.sem2Cgpa || "",
+        sem3Cgpa: user.profile.sem3Cgpa || "",
+        sem4Cgpa: user.profile.sem4Cgpa || "",
+        sem5Cgpa: user.profile.sem5Cgpa || "",
+        sem6Cgpa: user.profile.sem6Cgpa || "",
+        sem7Cgpa: user.profile.sem7Cgpa || "",
+        sem8Cgpa: user.profile.sem8Cgpa || "",
         historyOfArrear: user.profile.historyOfArrear || "No",
         activeBacklog: user.profile.activeBacklog || "No",
-        skills: user.profile.skills || "",
-        projects: user.profile.projects || "",
-        internships: user.profile.internships || "",
-        achievements: user.profile.achievements || "",
-        bio: user.profile.bio || "",
+        noOfBacklogs: user.profile.noOfBacklogs || "0",
+        // Files and Profiles
         profilePicture: user.profile.profilePicture || "",
         resume: user.profile.resume || "",
+        githubProfile: user.profile.githubProfile || "",
+        linkedInProfile: user.profile.linkedInProfile || "",
       })
     }
   }, [user])
 
-  // Get file preview URL for images
-  const getFilePreviewUrl = (fileId: string) => {
-    if (!fileId) return "/placeholder-user.jpg"
-    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/preview?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
-  }
-
-  // Get file view URL for documents (better for document preview)
-  const getFileViewUrl = (fileId: string) => {
-    if (!fileId) return ""
-    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
-  }
-
-  // Get file download URL
-  const getFileDownloadUrl = (fileId: string) => {
-    if (!fileId) return ""
-    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/download?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
-  }
-
   const handleSave = async () => {
+    if (!user) return
+    
     setIsSaving(true)
     setMessage({ type: "", text: "" })
-
+    
     try {
-      const result = await DatabaseService.updateUserProfile(user.$id, profileData)
+      const result = await DatabaseService.updateUserProfile(user.$id, {
+        ...profileData,
+        role: profileData.role as UserRole,
+        gender: profileData.gender as "Male" | "Female" | "Other" | undefined,
+        historyOfArrear: profileData.historyOfArrear as "Yes" | "No",
+        activeBacklog: profileData.activeBacklog as "Yes" | "No"
+      })
       
       setMessage({ 
         type: "success", 
@@ -171,22 +212,27 @@ function ProfilePageContent() {
       setMessage({ type: "", text: "" })
 
       try {
-        const uploadResult = await DatabaseService.uploadFile(file)
+        // Upload file to Appwrite storage
+        const uploadedFile = await DatabaseService.uploadFile(file)
         
-        // Update profile data with new file ID
-        const updatedData = { [type]: uploadResult.$id }
-        await DatabaseService.updateUserProfile(user.$id, updatedData)
+        // Update profile data
+        const updatedData = { ...profileData, [type]: uploadedFile.$id }
+        setProfileData(updatedData)
         
-        setProfileData(prev => ({ ...prev, [type]: uploadResult.$id }))
-        setMessage({
-          type: "success",
-          text: `${type === "resume" ? "Resume" : "Profile picture"} uploaded successfully!`,
+        // Update in database if user exists
+        if (user) {
+          await DatabaseService.updateUserProfile(user.$id, { [type]: uploadedFile.$id })
+        }
+        
+        setMessage({ 
+          type: "success", 
+          text: `${type === "resume" ? "Resume" : "Profile picture"} uploaded successfully!` 
         })
-        
-        // Refresh user data
-        window.location.reload()
       } catch (error: any) {
-        setMessage({ type: "error", text: error.message || "Failed to upload file" })
+        setMessage({ 
+          type: "error", 
+          text: error.message || `Failed to upload ${type}. Please try again.` 
+        })
       } finally {
         setIsUploading(false)
       }
@@ -196,29 +242,46 @@ function ProfilePageContent() {
   }
 
   const handleFileDelete = async (type: 'resume' | 'profilePicture') => {
+    if (!user) return
+    
     try {
       const fileId = profileData[type]
       if (fileId) {
         await DatabaseService.deleteFile(fileId)
-        
-        // Update profile to remove file reference
-        const updatedData = { [type]: "" }
-        await DatabaseService.updateUserProfile(user.$id, updatedData)
-        
-        setProfileData(prev => ({ ...prev, [type]: "" }))
-        setMessage({
-          type: "success",
-          text: `${type === "resume" ? "Resume" : "Profile picture"} deleted successfully!`,
-        })
       }
+      
+      const updatedData = { ...profileData, [type]: "" }
+      setProfileData(updatedData)
+      await DatabaseService.updateUserProfile(user.$id, { [type]: "" })
+      
+      setMessage({ 
+        type: "success", 
+        text: `${type === "resume" ? "Resume" : "Profile picture"} deleted successfully!` 
+      })
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Failed to delete file" })
+      setMessage({ 
+        type: "error", 
+        text: error.message || `Failed to delete ${type}. Please try again.` 
+      })
     }
   }
 
+  const getFilePreviewUrl = (fileId: string) => {
+    if (!fileId) return "/placeholder-user.jpg"
+    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/preview?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+  }
+
+  const getFileViewUrl = (fileId: string) => {
+    if (!fileId) return ""
+    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+  }
+
   const downloadFile = async (fileId: string, filename: string) => {
+    if (!fileId) return
+    
     try {
-      const downloadUrl = await DatabaseService.getFileDownload(fileId)
+      const downloadUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/download?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+      
       const link = document.createElement('a')
       link.href = downloadUrl
       link.download = filename
@@ -226,73 +289,73 @@ function ProfilePageContent() {
       link.click()
       document.body.removeChild(link)
     } catch (error) {
-      console.error('Error downloading file:', error)
+      setMessage({ 
+        type: "error", 
+        text: "Failed to download file. Please try again." 
+      })
     }
   }
 
-  const calculateProfileCompletion = () => {
-    const fields = [
-      'firstName', 'lastName', 'email', 'phone', 'personalEmail', 'rollNumber', 
-      'department', 'year', 'cgpa', 'historyOfArrear', 'activeBacklog', 'skills', 'profilePicture', 'resume'
-    ]
-    
-    const completed = fields.filter(field => {
-      const value = profileData[field as keyof typeof profileData]
-      return value && value.toString().trim() !== ''
-    }).length
-    
-    return Math.round((completed / fields.length) * 100)
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase()
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Profile Management</h1>
-                <p className="text-sm text-gray-600">Update your information</p>
+      <header className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Profile Management</h1>
+                  <p className="text-sm text-gray-600">Update your information</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)}>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Profile
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel
+            <div className="flex items-center gap-2">
+              {!isEditing ? (
+                <Button onClick={() => setIsEditing(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Profile
                 </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </>
-            )}
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setMessage({ type: "", text: "" })
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} disabled={isSaving}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Messages */}
         {message.text && (
-          <Alert
-            className={`mb-6 ${message.type === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}
-          >
+          <Alert className={`mb-6 ${message.type === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
             {message.type === "success" ? (
               <CheckCircle className="h-4 w-4 text-green-600" />
             ) : (
@@ -304,310 +367,126 @@ function ProfilePageContent() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Picture and Basic Info */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <Avatar className="w-32 h-32">
-                    <AvatarImage 
-                      src={profileData.profilePicture ? getFilePreviewUrl(profileData.profilePicture) : "/placeholder-user.jpg"} 
-                      alt="Profile Picture"
-                    />
-                    <AvatarFallback className="bg-blue-100 text-blue-600 text-4xl font-semibold">
-                      {profileData.firstName[0] || "U"}
-                      {profileData.lastName[0] || ""}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <CardTitle className="text-2xl">
-                  {profileData.firstName} {profileData.lastName}
-                </CardTitle>
-                <CardDescription className="text-lg">{profileData.department}</CardDescription>
-                <div className="flex justify-center gap-2 mt-4">
-                  <Badge variant="secondary">{profileData.year}</Badge>
-                  <Badge variant="outline">CGPA: {profileData.cgpa || "N/A"}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Profile Picture Upload */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Profile Picture</Label>
-                  <div className="flex gap-2">
+        {/* Profile Header */}
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <Avatar className="w-24 h-24">
+                  <AvatarImage src={profileData.profilePicture ? getFilePreviewUrl(profileData.profilePicture) : undefined} />
+                  <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-semibold">
+                    {getInitials(profileData.fullName || "User")}
+                  </AvatarFallback>
+                </Avatar>
+                {isEditing && (
+                  <div className="absolute -bottom-2 -right-2 flex gap-1">
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="flex-1"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
                       onClick={() => handleFileUpload("profilePicture")}
                       disabled={isUploading}
                     >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {isUploading ? "Uploading..." : "Upload"}
+                      <Upload className="w-4 h-4" />
                     </Button>
                     {profileData.profilePicture && (
                       <Button
-                        variant="outline"
                         size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                         onClick={() => handleFileDelete("profilePicture")}
-                        className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500">JPG, PNG up to 2MB</p>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {profileData.fullName || "User"}
+                  </h2>
+                  {profileData.isPlacementRep && (
+                    <Badge variant="secondary">Placement Rep</Badge>
+                  )}
                 </div>
-
-                {/* Resume Upload */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Resume</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleFileUpload("resume")}
-                      disabled={isUploading}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {isUploading ? "Uploading..." : "Upload"}
-                    </Button>
-                    {profileData.resume && (
-                      <>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh]">
-                            <DialogHeader>
-                              <DialogTitle>Resume Preview</DialogTitle>
-                              <DialogDescription>
-                                Preview of your uploaded resume - {profileData.firstName} {profileData.lastName}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="flex-1 min-h-[500px]">
-                              <div className="w-full h-[500px] border rounded bg-gray-50 relative">
-                                {/* Loading indicator */}
-                                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 rounded" id="loading-indicator">
-                                  <div className="flex flex-col items-center">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                                    <p className="text-sm text-gray-600">Loading preview...</p>
-                                  </div>
-                                </div>
-
-                                {/* Primary preview attempt */}
-                                <iframe
-                                  src={`${getFileViewUrl(profileData.resume)}`}
-                                  className="w-full h-full rounded"
-                                  title="Resume Preview"
-                                  onLoad={(e) => {
-                                    // Hide loading and fallbacks if iframe loads successfully
-                                    const loading = document.getElementById('loading-indicator')
-                                    if (loading) loading.style.display = 'none'
-                                    
-                                    const siblings = e.currentTarget.parentElement?.children
-                                    if (siblings) {
-                                      Array.from(siblings).forEach((sibling, index) => {
-                                        if (index > 1) { // Skip loading (0) and current iframe (1)
-                                          (sibling as HTMLElement).style.display = 'none'
-                                        }
-                                      })
-                                    }
-                                  }}
-                                  onError={(e) => {
-                                    // Try Google Docs Viewer as fallback
-                                    const loading = document.getElementById('loading-indicator')
-                                    if (loading) loading.style.display = 'none'
-                                    
-                                    e.currentTarget.style.display = 'none'
-                                    const googleViewer = e.currentTarget.nextElementSibling as HTMLIFrameElement
-                                    if (googleViewer && googleViewer.tagName === 'IFRAME') {
-                                      googleViewer.style.display = 'block'
-                                    }
-                                  }}
-                                />
-                                
-                                {/* Google Docs Viewer fallback */}
-                                <iframe
-                                  src={`https://docs.google.com/viewer?url=${encodeURIComponent(getFileViewUrl(profileData.resume))}&embedded=true`}
-                                  className="w-full h-full rounded"
-                                  title="Resume Preview (Google Viewer)"
-                                  style={{ display: 'none' }}
-                                  onLoad={(e) => {
-                                    // Hide loading if Google Viewer loads successfully
-                                    const loading = document.getElementById('loading-indicator')
-                                    if (loading) loading.style.display = 'none'
-                                  }}
-                                  onError={(e) => {
-                                    // If Google Viewer also fails, show final fallback
-                                    e.currentTarget.style.display = 'none'
-                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                                    if (fallback) fallback.style.display = 'flex'
-                                  }}
-                                />
-                                
-                                {/* Final fallback content */}
-                                <div 
-                                  className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gray-50 rounded"
-                                  style={{ display: 'none' }}
-                                >
-                                  <FileText className="w-16 h-16 text-gray-400 mb-4" />
-                                  <h3 className="text-lg font-medium text-gray-700 mb-2">
-                                    Preview not available
-                                  </h3>
-                                  <p className="text-gray-500 mb-6 max-w-md">
-                                    Your resume cannot be previewed directly in the browser. 
-                                    This might be due to the file format or browser security settings.
-                                  </p>
-                                  <div className="flex gap-3">
-                                    <Button
-                                      onClick={() => downloadFile(profileData.resume, `${profileData.firstName}-${profileData.lastName}-resume.pdf`)}
-                                      variant="outline"
-                                    >
-                                      <Download className="w-4 h-4 mr-2" />
-                                      Download Resume
-                                    </Button>
-                                    <Button
-                                      onClick={() => window.open(getFileViewUrl(profileData.resume), '_blank')}
-                                      variant="outline"
-                                    >
-                                      <Eye className="w-4 h-4 mr-2" />
-                                      Open in New Tab
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 pt-4">
-                              <Button
-                                onClick={() => downloadFile(profileData.resume, `${profileData.firstName}-${profileData.lastName}-resume.pdf`)}
-                              >
-                                <Download className="w-4 h-4 mr-2" />
-                                Download
-                              </Button>
-                              <Button
-                                variant="outline"
-                                onClick={() => window.open(getFileViewUrl(profileData.resume), '_blank')}
-                              >
-                                <Eye className="w-4 h-4 mr-2" />
-                                Open in New Tab
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => downloadFile(profileData.resume, `${profileData.firstName}-${profileData.lastName}-resume.pdf`)}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFileDelete("resume")}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">PDF, DOC, DOCX up to 5MB</p>
-                  {profileData.resume && (
-                    <div className="text-xs text-green-600 flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" />
-                      Resume uploaded successfully
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <Badge variant="outline">
+                    <GraduationCap className="w-3 h-3 mr-1" />
+                    {profileData.batch || "N/A"}
+                  </Badge>
+                  <Badge variant="outline">
+                    <Building2 className="w-3 h-3 mr-1" />
+                    {profileData.department || "N/A"}
+                  </Badge>
+                  <Badge variant="outline">CGPA: {profileData.currentCgpa || "N/A"}</Badge>
+                </div>
+                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                  {profileData.collegeEmail && (
+                    <div className="flex items-center gap-1">
+                      <Mail className="w-4 h-4" />
+                      {profileData.collegeEmail}
+                    </div>
+                  )}
+                  {profileData.phoneNo && (
+                    <div className="flex items-center gap-1">
+                      <Phone className="w-4 h-4" />
+                      {profileData.phoneNo}
+                    </div>
+                  )}
+                  {profileData.city && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {profileData.city}
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Quick Stats */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg">Profile Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Profile Completion</span>
-                  <Badge variant={calculateProfileCompletion() >= 80 ? "default" : "secondary"}>
-                    {calculateProfileCompletion()}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Resume</span>
-                  <Badge variant={profileData.resume ? "default" : "destructive"}>
-                    {profileData.resume ? "Uploaded" : "Missing"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Profile Picture</span>
-                  <Badge variant={profileData.profilePicture ? "default" : "secondary"}>
-                    {profileData.profilePicture ? "Uploaded" : "Default"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Profile Tabs */}
+        <Tabs defaultValue="basic" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="basic">Basic Info</TabsTrigger>
+            <TabsTrigger value="personal">Personal Details</TabsTrigger>
+            <TabsTrigger value="academic">Academic Info</TabsTrigger>
+            <TabsTrigger value="files">Files & Links</TabsTrigger>
+          </TabsList>
 
-          {/* Detailed Information */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Personal Information */}
+          {/* Basic Information */}
+          <TabsContent value="basic">
             <Card>
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Update your basic details</CardDescription>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>
+                  Your basic profile information and contact details
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name *</Label>
-                    <Input
-                      id="firstName"
-                      value={profileData.firstName}
-                      onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name *</Label>
-                    <Input
-                      id="lastName"
-                      value={profileData.lastName}
-                      onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
-                      disabled={!isEditing}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Input
+                    id="fullName"
+                    value={profileData.fullName}
+                    onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+                    disabled={!isEditing}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="collegeEmail">College Email *</Label>
                     <Input
-                      id="email"
+                      id="collegeEmail"
                       type="email"
-                      value={profileData.email}
-                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      value={profileData.collegeEmail}
+                      onChange={(e) => setProfileData({ ...profileData, collegeEmail: e.target.value })}
                       disabled={!isEditing}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      value={profileData.phone}
-                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="personalEmail">Personal Email</Label>
                     <Input
@@ -618,83 +497,201 @@ function ProfilePageContent() {
                       disabled={!isEditing}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="historyOfArrear">History of Arrear</Label>
-                    <Select
-                      value={profileData.historyOfArrear}
-                      onValueChange={(value) => setProfileData({ ...profileData, historyOfArrear: value })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="activeBacklog">Active Backlog</Label>
-                    <Select
-                      value={profileData.activeBacklog}
-                      onValueChange={(value) => setProfileData({ ...profileData, activeBacklog: value })}
+                    <Label htmlFor="phoneNo">Phone Number</Label>
+                    <Input
+                      id="phoneNo"
+                      value={profileData.phoneNo}
+                      onChange={(e) => setProfileData({ ...profileData, phoneNo: e.target.value })}
                       disabled={!isEditing}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={profileData.dateOfBirth}
+                      onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
+                      disabled={!isEditing}
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={profileData.dateOfBirth}
-                    onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
-                    disabled={!isEditing}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="bio">Bio</Label>
                   <Textarea
-                    id="address"
-                    value={profileData.address}
-                    onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+                    id="bio"
+                    value={profileData.bio}
+                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                     disabled={!isEditing}
                     rows={3}
+                    placeholder="Tell us about yourself..."
                   />
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Academic Information */}
+          {/* Personal Details */}
+          <TabsContent value="personal">
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Details</CardTitle>
+                <CardDescription>
+                  Additional personal information and family details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select
+                    value={profileData.gender}
+                    onValueChange={(value) => setProfileData({ ...profileData, gender: value })}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {genders.map((gender) => (
+                        <SelectItem key={gender} value={gender}>
+                          {gender}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="parentsName">Parent's/Guardian's Name</Label>
+                    <Input
+                      id="parentsName"
+                      value={profileData.parentsName}
+                      onChange={(e) => setProfileData({ ...profileData, parentsName: e.target.value })}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="parentsNo">Parent's/Guardian's Phone</Label>
+                    <Input
+                      id="parentsNo"
+                      value={profileData.parentsNo}
+                      onChange={(e) => setProfileData({ ...profileData, parentsNo: e.target.value })}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="currentAddress">Current Address</Label>
+                  <Textarea
+                    id="currentAddress"
+                    value={profileData.currentAddress}
+                    onChange={(e) => setProfileData({ ...profileData, currentAddress: e.target.value })}
+                    disabled={!isEditing}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="permanentAddress">Permanent Address</Label>
+                  <Textarea
+                    id="permanentAddress"
+                    value={profileData.permanentAddress}
+                    onChange={(e) => setProfileData({ ...profileData, permanentAddress: e.target.value })}
+                    disabled={!isEditing}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={profileData.city}
+                      onChange={(e) => setProfileData({ ...profileData, city: e.target.value })}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={profileData.country}
+                      onChange={(e) => setProfileData({ ...profileData, country: e.target.value })}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aadharNo">Aadhar Number</Label>
+                    <Input
+                      id="aadharNo"
+                      value={profileData.aadharNo}
+                      onChange={(e) => setProfileData({ ...profileData, aadharNo: e.target.value })}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pancardNo">PAN Card Number</Label>
+                    <Input
+                      id="pancardNo"
+                      value={profileData.pancardNo}
+                      onChange={(e) => setProfileData({ ...profileData, pancardNo: e.target.value })}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Academic Information */}
+          <TabsContent value="academic">
             <Card>
               <CardHeader>
                 <CardTitle>Academic Information</CardTitle>
-                <CardDescription>Your college and academic details</CardDescription>
+                <CardDescription>
+                  Your educational background and academic performance
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="rollNumber">Roll Number *</Label>
+                    <Label htmlFor="rollNo">Roll Number *</Label>
                     <Input
-                      id="rollNumber"
-                      value={profileData.rollNumber}
-                      onChange={(e) => setProfileData({ ...profileData, rollNumber: e.target.value })}
+                      id="rollNo"
+                      value={profileData.rollNo}
+                      onChange={(e) => setProfileData({ ...profileData, rollNo: e.target.value })}
                       disabled={!isEditing}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="batch">Batch *</Label>
+                    <Select
+                      value={profileData.batch}
+                      onValueChange={(value) => setProfileData({ ...profileData, batch: value })}
+                      disabled={!isEditing}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select batch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {batches.map((batch) => (
+                          <SelectItem key={batch} value={batch}>
+                            {batch}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="department">Department *</Label>
@@ -717,124 +714,236 @@ function ProfilePageContent() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentCgpa">Current CGPA</Label>
+                    <Input
+                      id="currentCgpa"
+                      value={profileData.currentCgpa}
+                      onChange={(e) => setProfileData({ ...profileData, currentCgpa: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tenthMarkPercent">10th Percentage</Label>
+                    <Input
+                      id="tenthMarkPercent"
+                      value={profileData.tenthMarkPercent}
+                      onChange={(e) => setProfileData({ ...profileData, tenthMarkPercent: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="twelthMarkPercent">12th Percentage</Label>
+                    <Input
+                      id="twelthMarkPercent"
+                      value={profileData.twelthMarkPercent}
+                      onChange={(e) => setProfileData({ ...profileData, twelthMarkPercent: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="diplomaMarkPercent">Diploma Percentage (if applicable)</Label>
+                    <Input
+                      id="diplomaMarkPercent"
+                      value={profileData.diplomaMarkPercent}
+                      onChange={(e) => setProfileData({ ...profileData, diplomaMarkPercent: e.target.value })}
+                      disabled={!isEditing}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                {/* Semester-wise CGPA */}
+                <div>
+                  <Label className="text-base font-medium">Semester-wise CGPA</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                    {semesterLabels.map((sem, index) => {
+                      const semKey = `sem${index + 1}Cgpa` as keyof typeof profileData
+                      return (
+                        <div key={semKey} className="space-y-2">
+                          <Label htmlFor={semKey} className="text-sm">{sem}</Label>
+                          <Input
+                            id={semKey}
+                            value={profileData[semKey] as string}
+                            onChange={(e) => setProfileData({ ...profileData, [semKey]: e.target.value })}
+                            disabled={!isEditing}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="year">Academic Year *</Label>
+                    <Label htmlFor="historyOfArrear">History of Arrear</Label>
                     <Select
-                      value={profileData.year}
-                      onValueChange={(value) => setProfileData({ ...profileData, year: value })}
+                      value={profileData.historyOfArrear}
+                      onValueChange={(value) => setProfileData({ ...profileData, historyOfArrear: value as "Yes" | "No" })}
                       disabled={!isEditing}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select year" />
+                        <SelectValue placeholder="Select option" />
                       </SelectTrigger>
                       <SelectContent>
-                        {years.map((year) => (
-                          <SelectItem key={year} value={year}>
-                            {year}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cgpa">CGPA *</Label>
-                    <Input
-                      id="cgpa"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="10"
-                      value={profileData.cgpa}
-                      onChange={(e) => setProfileData({ ...profileData, cgpa: e.target.value })}
+                    <Label htmlFor="activeBacklog">Active Backlog</Label>
+                    <Select
+                      value={profileData.activeBacklog}
+                      onValueChange={(value) => setProfileData({ ...profileData, activeBacklog: value as "Yes" | "No" })}
                       disabled={!isEditing}
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="backlogs">Active Backlogs</Label>
+                    <Label htmlFor="noOfBacklogs">Number of Backlogs</Label>
                     <Input
-                      id="backlogs"
-                      type="number"
-                      min="0"
-                      value={profileData.backlogs}
-                      onChange={(e) => setProfileData({ ...profileData, backlogs: e.target.value })}
+                      id="noOfBacklogs"
+                      value={profileData.noOfBacklogs}
+                      onChange={(e) => setProfileData({ ...profileData, noOfBacklogs: e.target.value })}
                       disabled={!isEditing}
+                      placeholder="0"
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Professional Information */}
+          {/* Files & Links */}
+          <TabsContent value="files">
             <Card>
               <CardHeader>
-                <CardTitle>Professional Information</CardTitle>
-                <CardDescription>Skills, projects, and experience</CardDescription>
+                <CardTitle>Files & Social Profiles</CardTitle>
+                <CardDescription>
+                  Upload your documents and add links to your professional profiles
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                {/* Resume Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="skills">Skills</Label>
-                  <Textarea
-                    id="skills"
-                    placeholder="List your technical and soft skills (e.g., Python, React, Communication, Leadership)"
-                    value={profileData.skills}
-                    onChange={(e) => setProfileData({ ...profileData, skills: e.target.value })}
-                    disabled={!isEditing}
-                    rows={3}
-                  />
+                  <Label className="text-sm font-medium">Resume</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleFileUpload("resume")}
+                      disabled={isUploading}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {isUploading ? "Uploading..." : "Upload Resume"}
+                    </Button>
+                    {profileData.resume && (
+                      <>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh]">
+                            <DialogHeader>
+                              <DialogTitle>Resume Preview</DialogTitle>
+                              <DialogDescription>
+                                Preview of your uploaded resume - {profileData.fullName}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex-1 min-h-[500px]">
+                              <iframe
+                                src={getFileViewUrl(profileData.resume)}
+                                className="w-full h-[500px] border rounded"
+                                title="Resume Preview"
+                              />
+                            </div>
+                            <div className="flex gap-2 pt-4">
+                              <Button
+                                onClick={() => downloadFile(profileData.resume, `${profileData.fullName.replace(/\s+/g, '-')}-resume.pdf`)}
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Download
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => window.open(getFileViewUrl(profileData.resume), '_blank')}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Open in New Tab
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleFileDelete("resume")}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">PDF, DOC, DOCX up to 5MB</p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="projects">Projects</Label>
-                  <Textarea
-                    id="projects"
-                    placeholder="Describe your academic and personal projects"
-                    value={profileData.projects}
-                    onChange={(e) => setProfileData({ ...profileData, projects: e.target.value })}
-                    disabled={!isEditing}
-                    rows={4}
-                  />
-                </div>
+                {/* Social Profiles */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="githubProfile">GitHub Profile</Label>
+                    <div className="flex">
+                      <div className="flex items-center px-3 bg-gray-50 border border-r-0 rounded-l-md">
+                        <Github className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <Input
+                        id="githubProfile"
+                        value={profileData.githubProfile}
+                        onChange={(e) => setProfileData({ ...profileData, githubProfile: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="https://github.com/username"
+                        className="rounded-l-none"
+                      />
+                    </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="internships">Internships</Label>
-                  <Textarea
-                    id="internships"
-                    placeholder="List your internship experiences"
-                    value={profileData.internships}
-                    onChange={(e) => setProfileData({ ...profileData, internships: e.target.value })}
-                    disabled={!isEditing}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="achievements">Achievements</Label>
-                  <Textarea
-                    id="achievements"
-                    placeholder="List your achievements, awards, and certifications"
-                    value={profileData.achievements}
-                    onChange={(e) => setProfileData({ ...profileData, achievements: e.target.value })}
-                    disabled={!isEditing}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    placeholder="Write a brief bio about yourself"
-                    value={profileData.bio}
-                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                    disabled={!isEditing}
-                    rows={4}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="linkedInProfile">LinkedIn Profile</Label>
+                    <div className="flex">
+                      <div className="flex items-center px-3 bg-gray-50 border border-r-0 rounded-l-md">
+                        <Linkedin className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <Input
+                        id="linkedInProfile"
+                        value={profileData.linkedInProfile}
+                        onChange={(e) => setProfileData({ ...profileData, linkedInProfile: e.target.value })}
+                        disabled={!isEditing}
+                        placeholder="https://linkedin.com/in/username"
+                        className="rounded-l-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

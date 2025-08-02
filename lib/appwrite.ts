@@ -52,29 +52,48 @@ export interface User {
 export interface UserProfile {
   $id: string
   userId: string
-  firstName: string
-  lastName: string
-  email: string
-  phone?: string
+  fullName: string
+  collegeEmail: string
   personalEmail?: string
-  rollNumber?: string
-  department?: string
-  year?: string
+  role: UserRole
+  isPlacementRep: boolean
+  // Personal Details
   dateOfBirth?: string
-  address?: string
-  cgpa?: string
-  backlogs?: string
-  historyOfArrear?: string
-  activeBacklog?: string
-  skills?: string
-  projects?: string
-  internships?: string
-  achievements?: string
+  gender?: 'Male' | 'Female' | 'Other'
+  phoneNo?: string
+  parentsName?: string
+  parentsNo?: string
+  currentAddress?: string
+  permanentAddress?: string
+  city?: string
+  country?: string
+  aadharNo?: string
+  pancardNo?: string
   bio?: string
+  // Academic Information
+  rollNo?: string
+  batch?: string
+  department?: string
+  currentCgpa?: string
+  tenthMarkPercent?: string
+  twelthMarkPercent?: string
+  diplomaMarkPercent?: string
+  sem1Cgpa?: string
+  sem2Cgpa?: string
+  sem3Cgpa?: string
+  sem4Cgpa?: string
+  sem5Cgpa?: string
+  sem6Cgpa?: string
+  sem7Cgpa?: string
+  sem8Cgpa?: string
+  historyOfArrear?: 'Yes' | 'No'
+  activeBacklog?: 'Yes' | 'No'
+  noOfBacklogs?: string
+  // Files and Profiles
   profilePicture?: string
   resume?: string
-  isPlacementRep?: boolean
-  role?: UserRole
+  githubProfile?: string
+  linkedInProfile?: string
   createdAt: string
   updatedAt: string
 }
@@ -107,40 +126,35 @@ export interface Application {
   jobTitle: string
   company: string
   status: 'applied' | 'under_review' | 'interview_scheduled' | 'selected' | 'rejected'
-  coverLetter?: string
-  additionalInfo?: string
   appliedAt: string
   createdAt: string
   updatedAt: string
-  // User details (populated when needed)
-  userName?: string
-  userEmail?: string
-  userPhone?: string
-  userPersonalEmail?: string
-  userRollNumber?: string
-  userDepartment?: string
-  userCGPA?: string
-  userActiveBacklog?: string
-  userHistoryOfArrear?: string
-  userResume?: string
+}
+
+// Extended Application interface with user data for admin dashboard
+export interface ApplicationWithUserData extends Application {
+  userName: string
+  userRollNumber: string
+  userDepartment: string
+  userCGPA: string
+  userActiveBacklog: string
+  userHistoryOfArrear: string
+  userPersonalEmail: string
+  userPhone: string
+  userResume: string
 }
 
 export interface Placement {
   $id: string
   userId: string
   jobId?: string
-  studentName?: string  // Keep for backward compatibility
-  studentId?: string    // Keep for backward compatibility
-  department?: string   // Keep for backward compatibility  
-  batch?: string        // Keep for backward compatibility
   company: string
-  position?: string     // Keep for backward compatibility
+  position?: string
   package: string
   location?: string
   joiningDate?: string
   offerLetterDate?: string
   placedAt: string
-  testimonial?: string
   photo?: string
   offerLetter?: string
   createdAt: string

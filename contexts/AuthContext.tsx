@@ -11,11 +11,10 @@ interface AuthContextType {
   verifyOTP: (userId: string, otp: string) => Promise<{ success: boolean; message: string }>
   signup: (data: {
     email: string
-    firstName: string
-    lastName: string
-    rollNumber?: string
+    fullName: string
+    rollNo?: string
     department?: string
-    year?: string
+    batch?: string
     role: UserRole
     isPlacementRep?: boolean
   }) => Promise<{ success: boolean; message: string; user?: any }>
@@ -80,11 +79,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signup = async (data: {
     email: string
-    firstName: string
-    lastName: string
-    rollNumber?: string
+    fullName: string
+    rollNo?: string
     department?: string
-    year?: string
+    batch?: string
     role: UserRole
     isPlacementRep?: boolean
   }) => {

@@ -19,12 +19,11 @@ import { UserRole } from "@/lib/appwrite"
 export default function SignupPage() {
   const [step, setStep] = useState<'signup' | 'otp'>('signup')
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: "",
-    rollNumber: "",
+    rollNo: "",
     department: "",
-    year: "",
+    batch: "",
     otp: "",
     isPlacementRep: false,
   })
@@ -49,7 +48,7 @@ export default function SignupPage() {
     "Biomedical Engineering",
   ]
 
-  const years = ["1st Year", "2nd Year", "3rd Year", "4th Year"]
+  const batches = ["2021-2025", "2022-2026", "2023-2027", "2024-2028", "2025-2029"]
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,11 +59,10 @@ export default function SignupPage() {
     try {
       const userData = {
         email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        rollNumber: formData.rollNumber,
+        fullName: formData.fullName,
+        rollNo: formData.rollNo,
         department: formData.department,
-        year: formData.year,
+        batch: formData.batch,
         role: UserRole.STUDENT,
         isPlacementRep: formData.isPlacementRep,
       }
@@ -197,27 +195,15 @@ export default function SignupPage() {
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      placeholder="John"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Doe"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="John Doe"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -237,25 +223,25 @@ export default function SignupPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="rollNumber">Roll Number</Label>
+                    <Label htmlFor="rollNo">Roll Number</Label>
                     <Input
-                      id="rollNumber"
+                      id="rollNo"
                       placeholder="21CS001"
-                      value={formData.rollNumber}
-                      onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+                      value={formData.rollNo}
+                      onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="year">Year of Study</Label>
-                    <Select value={formData.year} onValueChange={(value) => setFormData({ ...formData, year: value })}>
+                    <Label htmlFor="batch">Batch</Label>
+                    <Select value={formData.batch} onValueChange={(value) => setFormData({ ...formData, batch: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select year" />
+                        <SelectValue placeholder="Select batch" />
                       </SelectTrigger>
                       <SelectContent>
-                        {years.map((year) => (
-                          <SelectItem key={year} value={year}>
-                            {year}
+                        {batches.map((batch) => (
+                          <SelectItem key={batch} value={batch}>
+                            {batch}
                           </SelectItem>
                         ))}
                       </SelectContent>

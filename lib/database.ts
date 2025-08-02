@@ -1,6 +1,6 @@
 import { databases, storage, config } from './appwrite'
 import { ID, Query } from 'appwrite'
-import type { Job, Application, UserProfile, Placement, AdminRole } from './appwrite'
+import type { Job, Application, UserProfile, Placement, AdminRole, ApplicationWithUserData } from './appwrite'
 
 export class DatabaseService {
   // Helper function to convert departments array to string for storage
@@ -147,6 +147,109 @@ export class DatabaseService {
       return response.documents as unknown as Application[]
     } catch (error) {
       console.error('Error fetching job applications:', error)
+      throw error
+    }
+  }
+
+  // Get applications with user profile data for admin dashboard
+  static async getJobApplicationsWithUserData(jobId: string): Promise<ApplicationWithUserData[]> {
+    try {
+      const response = await databases.listDocuments(
+        config.databaseId,
+        config.collections.applications,
+        [
+          Query.equal('jobId', jobId)
+        ]
+      )
+      
+      const applicationsWithUserData = await Promise.all(
+        response.documents.map(async (app: any) => {
+          try {
+            const userProfile = await this.getUserProfile(app.userId)
+            return {
+              ...app,
+              userName: userProfile.fullName || "N/A",
+              userRollNumber: userProfile.rollNo || "N/A", 
+              userDepartment: userProfile.department || "N/A",
+              userCGPA: userProfile.currentCgpa || "N/A",
+              userActiveBacklog: userProfile.activeBacklog || "N/A",
+              userHistoryOfArrear: userProfile.historyOfArrear || "N/A",
+              userPersonalEmail: userProfile.personalEmail || "N/A",
+              userPhone: userProfile.phoneNo || "N/A",
+              userResume: userProfile.resume || "N/A"
+            }
+          } catch (error) {
+            console.error(`Error fetching user profile for ${app.userId}:`, error)
+            return {
+              ...app,
+              userName: "N/A",
+              userRollNumber: "N/A", 
+              userDepartment: "N/A",
+              userCGPA: "N/A",
+              userActiveBacklog: "N/A",
+              userHistoryOfArrear: "N/A",
+              userPersonalEmail: "N/A",
+              userPhone: "N/A",
+              userResume: "N/A"
+            }
+          }
+        })
+      )
+      
+      return applicationsWithUserData
+    } catch (error) {
+      console.error('Error fetching job applications with user data:', error)
+      throw error
+    }
+  }
+
+  static async getAllApplicationsWithUserData(): Promise<ApplicationWithUserData[]> {
+    try {
+      const response = await databases.listDocuments(
+        config.databaseId,
+        config.collections.applications,
+        [
+          Query.limit(1000)
+        ]
+      )
+      
+      const applicationsWithUserData = await Promise.all(
+        response.documents.map(async (app: any) => {
+          try {
+            const userProfile = await this.getUserProfile(app.userId)
+            return {
+              ...app,
+              userName: userProfile.fullName || "N/A",
+              userRollNumber: userProfile.rollNo || "N/A", 
+              userDepartment: userProfile.department || "N/A",
+              userCGPA: userProfile.currentCgpa || "N/A",
+              userActiveBacklog: userProfile.activeBacklog || "N/A",
+              userHistoryOfArrear: userProfile.historyOfArrear || "N/A",
+              userPersonalEmail: userProfile.personalEmail || "N/A",
+              userPhone: userProfile.phoneNo || "N/A",
+              userResume: userProfile.resume || "N/A"
+            }
+          } catch (error) {
+            console.error(`Error fetching user profile for ${app.userId}:`, error)
+            return {
+              ...app,
+              userName: "N/A",
+              userRollNumber: "N/A", 
+              userDepartment: "N/A",
+              userCGPA: "N/A",
+              userActiveBacklog: "N/A",
+              userHistoryOfArrear: "N/A",
+              userPersonalEmail: "N/A",
+              userPhone: "N/A",
+              userResume: "N/A"
+            }
+          }
+        })
+      )
+      
+      return applicationsWithUserData
+    } catch (error) {
+      console.error('Error fetching all applications with user data:', error)
       throw error
     }
   }

@@ -72,11 +72,10 @@ export class AuthService {
   // Create user account and profile
   static async createUser(data: {
     email: string
-    firstName: string
-    lastName: string
-    rollNumber?: string
+    fullName: string
+    rollNo?: string
     department?: string
-    year?: string
+    batch?: string
     role: UserRole
     isPlacementRep?: boolean
   }): Promise<{ success: boolean; message: string; user?: any }> {
@@ -122,24 +121,17 @@ export class AuthService {
         user.$id,
         {
           userId: user.$id,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          rollNumber: userData.rollNumber || '',
+          collegeEmail: userData.email,
+          fullName: userData.fullName,
+          rollNo: userData.rollNo || '',
           department: userData.department || '',
-          year: userData.year || '',
+          batch: userData.batch || '',
           role: userData.role,
           isPlacementRep: userData.isPlacementRep || false,
-          phone: '',
-          dateOfBirth: '',
-          address: '',
-          cgpa: '',
-          backlogs: '0',
-          skills: '',
-          projects: '',
-          internships: '',
-          achievements: '',
-          bio: '',
+          country: 'India',
+          historyOfArrear: 'No',
+          activeBacklog: 'No',
+          noOfBacklogs: '0',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
@@ -170,7 +162,7 @@ export class AuthService {
         const profileResult = await databases.listDocuments(
           config.databaseId,
           config.collections.users,
-          [Query.equal('email', user.email)]
+          [Query.equal('collegeEmail', user.email)]
         )
         
         if (profileResult.documents.length > 0) {
@@ -187,7 +179,7 @@ export class AuthService {
         ...user, 
         profile: userProfile,
         adminRole,
-        name: user.name || (userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : 'User')
+        name: user.name || (userProfile ? userProfile.fullName : 'User')
       }
     } catch (error) {
       return null
