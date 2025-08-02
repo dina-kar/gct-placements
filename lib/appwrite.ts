@@ -133,15 +133,53 @@ export interface Application {
 
 // Extended Application interface with user data for admin dashboard
 export interface ApplicationWithUserData extends Application {
+  // Basic user identification
+  userId: string
   userName: string
   userRollNumber: string
   userDepartment: string
+  userBatch: string
+  
+  // Contact information
+  userPersonalEmail: string
+  userCollegeEmail: string
+  userPhone: string
+  userParentsName: string
+  userParentsPhone: string
+  userCurrentAddress: string
+  userPermanentAddress: string
+  userCity: string
+  userCountry: string
+  userAadharNo: string
+  userPancardNo: string
+  
+  // Personal details
+  userGender: string
+  userDateOfBirth: string
+  
+  // Academic information
   userCGPA: string
+  userTenthMarks: string
+  userTwelthMarks: string
+  userDiplomaMarks: string
   userActiveBacklog: string
   userHistoryOfArrear: string
-  userPersonalEmail: string
-  userPhone: string
+  userNoOfBacklogs: string
+  
+  // Semester-wise CGPA
+  userSem1Cgpa: string
+  userSem2Cgpa: string
+  userSem3Cgpa: string
+  userSem4Cgpa: string
+  userSem5Cgpa: string
+  userSem6Cgpa: string
+  userSem7Cgpa: string
+  userSem8Cgpa: string
+  
+  // Files and profiles
   userResume: string
+  userGithubProfile: string
+  userLinkedInProfile: string
 }
 
 export interface Placement {

@@ -168,29 +168,105 @@ export class DatabaseService {
             const userProfile = await this.getUserProfile(app.userId)
             return {
               ...app,
+              // Basic user identification
+              userId: userProfile.userId || app.userId || "N/A",
               userName: userProfile.fullName || "N/A",
               userRollNumber: userProfile.rollNo || "N/A", 
               userDepartment: userProfile.department || "N/A",
+              userBatch: userProfile.batch || "N/A",
+              
+              // Contact information
+              userPersonalEmail: userProfile.personalEmail || "N/A",
+              userCollegeEmail: userProfile.collegeEmail || "N/A",
+              userPhone: userProfile.phoneNo || "N/A",
+              userParentsName: userProfile.parentsName || "N/A",
+              userParentsPhone: userProfile.parentsNo || "N/A",
+              userCurrentAddress: userProfile.currentAddress || "N/A",
+              userPermanentAddress: userProfile.permanentAddress || "N/A",
+              userCity: userProfile.city || "N/A",
+              userCountry: userProfile.country || "N/A",
+              userAadharNo: userProfile.aadharNo || "N/A",
+              userPancardNo: userProfile.pancardNo || "N/A",
+              
+              // Personal details
+              userGender: userProfile.gender || "N/A",
+              userDateOfBirth: userProfile.dateOfBirth || "N/A",
+              
+              // Academic information
               userCGPA: userProfile.currentCgpa || "N/A",
+              userTenthMarks: userProfile.tenthMarkPercent || "N/A",
+              userTwelthMarks: userProfile.twelthMarkPercent || "N/A",
+              userDiplomaMarks: userProfile.diplomaMarkPercent || "N/A",
               userActiveBacklog: userProfile.activeBacklog || "N/A",
               userHistoryOfArrear: userProfile.historyOfArrear || "N/A",
-              userPersonalEmail: userProfile.personalEmail || "N/A",
-              userPhone: userProfile.phoneNo || "N/A",
-              userResume: userProfile.resume || "N/A"
+              userNoOfBacklogs: userProfile.noOfBacklogs || "N/A",
+              
+              // Semester-wise CGPA
+              userSem1Cgpa: userProfile.sem1Cgpa || "N/A",
+              userSem2Cgpa: userProfile.sem2Cgpa || "N/A",
+              userSem3Cgpa: userProfile.sem3Cgpa || "N/A",
+              userSem4Cgpa: userProfile.sem4Cgpa || "N/A",
+              userSem5Cgpa: userProfile.sem5Cgpa || "N/A",
+              userSem6Cgpa: userProfile.sem6Cgpa || "N/A",
+              userSem7Cgpa: userProfile.sem7Cgpa || "N/A",
+              userSem8Cgpa: userProfile.sem8Cgpa || "N/A",
+              
+              // Files and profiles
+              userResume: userProfile.resume || "N/A",
+              userGithubProfile: userProfile.githubProfile || "N/A",
+              userLinkedInProfile: userProfile.linkedInProfile || "N/A"
             }
           } catch (error) {
             console.error(`Error fetching user profile for ${app.userId}:`, error)
             return {
               ...app,
+              // Basic user identification
+              userId: app.userId || "N/A",
               userName: "N/A",
               userRollNumber: "N/A", 
               userDepartment: "N/A",
+              userBatch: "N/A",
+              
+              // Contact information
+              userPersonalEmail: "N/A",
+              userCollegeEmail: "N/A",
+              userPhone: "N/A",
+              userParentsName: "N/A",
+              userParentsPhone: "N/A",
+              userCurrentAddress: "N/A",
+              userPermanentAddress: "N/A",
+              userCity: "N/A",
+              userCountry: "N/A",
+              userAadharNo: "N/A",
+              userPancardNo: "N/A",
+              
+              // Personal details
+              userGender: "N/A",
+              userDateOfBirth: "N/A",
+              
+              // Academic information
               userCGPA: "N/A",
+              userTenthMarks: "N/A",
+              userTwelthMarks: "N/A",
+              userDiplomaMarks: "N/A",
               userActiveBacklog: "N/A",
               userHistoryOfArrear: "N/A",
-              userPersonalEmail: "N/A",
-              userPhone: "N/A",
-              userResume: "N/A"
+              userNoOfBacklogs: "N/A",
+              
+              // Semester-wise CGPA
+              userSem1Cgpa: "N/A",
+              userSem2Cgpa: "N/A",
+              userSem3Cgpa: "N/A",
+              userSem4Cgpa: "N/A",
+              userSem5Cgpa: "N/A",
+              userSem6Cgpa: "N/A",
+              userSem7Cgpa: "N/A",
+              userSem8Cgpa: "N/A",
+              
+              // Files and profiles
+              userResume: "N/A",
+              userGithubProfile: "N/A",
+              userLinkedInProfile: "N/A"
             }
           }
         })
@@ -219,29 +295,105 @@ export class DatabaseService {
             const userProfile = await this.getUserProfile(app.userId)
             return {
               ...app,
+              // Basic user identification
+              userId: userProfile.userId || app.userId || "N/A",
               userName: userProfile.fullName || "N/A",
               userRollNumber: userProfile.rollNo || "N/A", 
               userDepartment: userProfile.department || "N/A",
+              userBatch: userProfile.batch || "N/A",
+              
+              // Contact information
+              userPersonalEmail: userProfile.personalEmail || "N/A",
+              userCollegeEmail: userProfile.collegeEmail || "N/A",
+              userPhone: userProfile.phoneNo || "N/A",
+              userParentsName: userProfile.parentsName || "N/A",
+              userParentsPhone: userProfile.parentsNo || "N/A",
+              userCurrentAddress: userProfile.currentAddress || "N/A",
+              userPermanentAddress: userProfile.permanentAddress || "N/A",
+              userCity: userProfile.city || "N/A",
+              userCountry: userProfile.country || "N/A",
+              userAadharNo: userProfile.aadharNo || "N/A",
+              userPancardNo: userProfile.pancardNo || "N/A",
+              
+              // Personal details
+              userGender: userProfile.gender || "N/A",
+              userDateOfBirth: userProfile.dateOfBirth || "N/A",
+              
+              // Academic information
               userCGPA: userProfile.currentCgpa || "N/A",
+              userTenthMarks: userProfile.tenthMarkPercent || "N/A",
+              userTwelthMarks: userProfile.twelthMarkPercent || "N/A",
+              userDiplomaMarks: userProfile.diplomaMarkPercent || "N/A",
               userActiveBacklog: userProfile.activeBacklog || "N/A",
               userHistoryOfArrear: userProfile.historyOfArrear || "N/A",
-              userPersonalEmail: userProfile.personalEmail || "N/A",
-              userPhone: userProfile.phoneNo || "N/A",
-              userResume: userProfile.resume || "N/A"
+              userNoOfBacklogs: userProfile.noOfBacklogs || "N/A",
+              
+              // Semester-wise CGPA
+              userSem1Cgpa: userProfile.sem1Cgpa || "N/A",
+              userSem2Cgpa: userProfile.sem2Cgpa || "N/A",
+              userSem3Cgpa: userProfile.sem3Cgpa || "N/A",
+              userSem4Cgpa: userProfile.sem4Cgpa || "N/A",
+              userSem5Cgpa: userProfile.sem5Cgpa || "N/A",
+              userSem6Cgpa: userProfile.sem6Cgpa || "N/A",
+              userSem7Cgpa: userProfile.sem7Cgpa || "N/A",
+              userSem8Cgpa: userProfile.sem8Cgpa || "N/A",
+              
+              // Files and profiles
+              userResume: userProfile.resume || "N/A",
+              userGithubProfile: userProfile.githubProfile || "N/A",
+              userLinkedInProfile: userProfile.linkedInProfile || "N/A"
             }
           } catch (error) {
             console.error(`Error fetching user profile for ${app.userId}:`, error)
             return {
               ...app,
+              // Basic user identification
+              userId: app.userId || "N/A",
               userName: "N/A",
               userRollNumber: "N/A", 
               userDepartment: "N/A",
+              userBatch: "N/A",
+              
+              // Contact information
+              userPersonalEmail: "N/A",
+              userCollegeEmail: "N/A",
+              userPhone: "N/A",
+              userParentsName: "N/A",
+              userParentsPhone: "N/A",
+              userCurrentAddress: "N/A",
+              userPermanentAddress: "N/A",
+              userCity: "N/A",
+              userCountry: "N/A",
+              userAadharNo: "N/A",
+              userPancardNo: "N/A",
+              
+              // Personal details
+              userGender: "N/A",
+              userDateOfBirth: "N/A",
+              
+              // Academic information
               userCGPA: "N/A",
+              userTenthMarks: "N/A",
+              userTwelthMarks: "N/A",
+              userDiplomaMarks: "N/A",
               userActiveBacklog: "N/A",
               userHistoryOfArrear: "N/A",
-              userPersonalEmail: "N/A",
-              userPhone: "N/A",
-              userResume: "N/A"
+              userNoOfBacklogs: "N/A",
+              
+              // Semester-wise CGPA
+              userSem1Cgpa: "N/A",
+              userSem2Cgpa: "N/A",
+              userSem3Cgpa: "N/A",
+              userSem4Cgpa: "N/A",
+              userSem5Cgpa: "N/A",
+              userSem6Cgpa: "N/A",
+              userSem7Cgpa: "N/A",
+              userSem8Cgpa: "N/A",
+              
+              // Files and profiles
+              userResume: "N/A",
+              userGithubProfile: "N/A",
+              userLinkedInProfile: "N/A"
             }
           }
         })
@@ -268,6 +420,19 @@ export class DatabaseService {
       return application as unknown as Application
     } catch (error) {
       console.error('Error updating application status:', error)
+      throw error
+    }
+  }
+
+  static async bulkUpdateApplicationStatus(applicationIds: string[], status: string) {
+    try {
+      const updatePromises = applicationIds.map(id => 
+        this.updateApplicationStatus(id, status)
+      )
+      const results = await Promise.all(updatePromises)
+      return results
+    } catch (error) {
+      console.error('Error bulk updating application status:', error)
       throw error
     }
   }

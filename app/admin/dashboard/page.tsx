@@ -23,6 +23,10 @@ import {
   Filter,
   FileText,
   Clock,
+  ExternalLink,
+  UserCircle,
+  CheckSquare,
+  RotateCcw,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -30,6 +34,10 @@ import { useAuth } from "@/contexts/AuthContext"
 import { DatabaseService } from "@/lib/database"
 import { Job, Application, ApplicationWithUserData } from "@/lib/appwrite"
 import { AdminRoute } from "@/components/ProtectedRoute"
+import { StudentProfileModal } from "@/components/StudentProfileModal"
+import { ExportModal } from "@/components/ExportModal"
+import { BulkUpdateModal } from "@/components/BulkUpdateModal"
+import { storage, config } from "@/lib/appwrite"
 
 export default function AdminDashboard() {
   const { user, logout, isPlacementRep, hasStudentAccess, isPlacementCoordinator } = useAuth()
@@ -40,6 +48,10 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [selectedApplications, setSelectedApplications] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -109,48 +121,63 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleExportData = () => {
-    const filteredApplications = getFilteredApplications()
-    
-    if (filteredApplications.length === 0) {
-      alert("No applications to export")
-      return
+  const handleBulkStatusUpdate = async (applicationIds: string[], newStatus: string) => {
+    try {
+      await DatabaseService.bulkUpdateApplicationStatus(applicationIds, newStatus)
+      setSelectedApplications([])
+      // Refresh applications
+      if (selectedJob !== "all") {
+        fetchJobApplications(selectedJob)
+      } else {
+        fetchAllApplications()
+      }
+    } catch (error) {
+      console.error('Error bulk updating applications:', error)
+      throw error
     }
+  }
 
-    // Create CSV data
-    const headers = ["Name", "Roll Number", "Department", "CGPA", "Active Backlog", "History of Arrear", "Personal Email", "Phone", "Job Title", "Company", "Status", "Applied Date", "Resume Link"]
-    const csvData = [
-      headers,
-      ...filteredApplications.map(app => [
-        app.userName || "N/A",
-        app.userRollNumber || "N/A", 
-        app.userDepartment || "N/A",
-        app.userCGPA || "N/A",
-        app.userActiveBacklog || "N/A",
-        app.userHistoryOfArrear || "N/A",
-        app.userPersonalEmail || "N/A",
-        app.userPhone || "N/A",
-        app.jobTitle || "N/A",
-        app.company || "N/A",
-        app.status || "N/A",
-        new Date(app.appliedAt).toLocaleDateString(),
-        app.userResume || "N/A"
-      ])
-    ]
+  const handleViewProfile = (userId: string) => {
+    setSelectedStudentId(userId)
+    setShowProfileModal(true)
+  }
 
-    // Convert to CSV string
-    const csvString = csvData.map(row => row.join(",")).join("\n")
-    
-    // Download CSV
-    const blob = new Blob([csvString], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `applications_${selectedJob !== "all" ? jobs.find(j => j.$id === selectedJob)?.title || "all" : "all"}_${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+  const handleDownloadResume = (resumeUrl: string) => {
+    if (resumeUrl && resumeUrl !== "N/A") {
+      try {
+        // Extract file ID from the resume URL or use the resume field directly if it's already a file ID
+        const fileId = resumeUrl.includes('/') ? 
+          resumeUrl.split('/').pop()?.split('?')[0] || resumeUrl : 
+          resumeUrl
+        
+        const downloadUrl = storage.getFileDownload(config.storageId, fileId)
+        window.open(downloadUrl.toString(), '_blank')
+      } catch (error) {
+        console.error('Error downloading resume:', error)
+        alert('Unable to download resume. Please check if the file exists.')
+      }
+    } else {
+      alert('No resume available for this student.')
+    }
+  }
+
+  const handleViewResume = (resumeUrl: string) => {
+    if (resumeUrl && resumeUrl !== "N/A") {
+      try {
+        // Extract file ID from the resume URL or use the resume field directly if it's already a file ID
+        const fileId = resumeUrl.includes('/') ? 
+          resumeUrl.split('/').pop()?.split('?')[0] || resumeUrl : 
+          resumeUrl
+        
+        const previewUrl = storage.getFileView(config.storageId, fileId)
+        window.open(previewUrl.toString(), '_blank')
+      } catch (error) {
+        console.error('Error viewing resume:', error)
+        alert('Unable to view resume. Please check if the file exists.')
+      }
+    } else {
+      alert('No resume available for this student.')
+    }
   }
 
   const getFilteredApplications = () => {
@@ -178,6 +205,15 @@ export default function AdminDashboard() {
       pending: pendingApplications,
       interviews: interviewScheduled,
       selected: selectedCandidates
+    }
+  }
+
+  const handleSelectAll = () => {
+    const filteredApps = getFilteredApplications()
+    if (selectedApplications.length === filteredApps.length) {
+      setSelectedApplications([])
+    } else {
+      setSelectedApplications(filteredApps.map(app => app.$id))
     }
   }
 
@@ -319,10 +355,16 @@ export default function AdminDashboard() {
                   </CardTitle>
                   <CardDescription>Review and manage job applications from students</CardDescription>
                 </div>
-                <Button onClick={handleExportData} disabled={filteredApplications.length === 0}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Export Data
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => setShowExportModal(true)} 
+                    disabled={filteredApplications.length === 0}
+                    variant="outline"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Data
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -374,6 +416,42 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {/* Bulk Actions Header */}
+              {filteredApplications.length > 0 && (
+                <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Checkbox
+                      checked={selectedApplications.length === filteredApplications.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                    <span className="text-sm font-medium">
+                      Select All ({selectedApplications.length}/{filteredApplications.length})
+                    </span>
+                  </div>
+                  
+                  {selectedApplications.length > 0 && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowBulkUpdateModal(true)}
+                      >
+                        <CheckSquare className="w-4 h-4 mr-2" />
+                        Update Status ({selectedApplications.length})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedApplications([])}
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Clear Selection
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Applications List */}
               <div className="space-y-4">
                 {filteredApplications.length === 0 ? (
@@ -401,10 +479,19 @@ export default function AdminDashboard() {
                               <span>Roll: {application.userRollNumber || "N/A"}</span>
                               <span>Dept: {application.userDepartment || "N/A"}</span>
                               <span>CGPA: {application.userCGPA || "N/A"}</span>
+                              <span>Batch: {application.userBatch || "N/A"}</span>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                               <span className="font-medium">{application.jobTitle}</span>
                               <span>@ {application.company}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant={application.userActiveBacklog === "Yes" ? "destructive" : "secondary"}>
+                                {application.userActiveBacklog === "Yes" ? "Has Backlog" : "No Backlog"}
+                              </Badge>
+                              <Badge variant={application.userHistoryOfArrear === "Yes" ? "outline" : "default"}>
+                                {application.userHistoryOfArrear === "Yes" ? "Has Arrear History" : "No Arrear History"}
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -442,25 +529,35 @@ export default function AdminDashboard() {
 
                       <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                         <span>Applied: {new Date(application.appliedAt).toLocaleDateString()}</span>
-                        {application.userResume && (
-                          <a 
-                            href={application.userResume} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            View Resume
-                          </a>
-                        )}
+                        <span>Email: {application.userPersonalEmail || "N/A"}</span>
+                        <span>Phone: {application.userPhone || "N/A"}</span>
                       </div>
 
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <Eye className="w-4 h-4 mr-1" />
-                          View Details
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewProfile(application.userId)}
+                        >
+                          <UserCircle className="w-4 h-4 mr-1" />
+                          View Profile
                         </Button>
-                        <Button size="sm" variant="outline">
-                          <FileText className="w-4 h-4 mr-1" />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewResume(application.userResume)}
+                          disabled={!application.userResume || application.userResume === "N/A"}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View Resume
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleDownloadResume(application.userResume)}
+                          disabled={!application.userResume || application.userResume === "N/A"}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
                           Download Resume
                         </Button>
                       </div>
@@ -468,28 +565,36 @@ export default function AdminDashboard() {
                   ))
                 )}
               </div>
-
-              {/* Bulk Actions */}
-              {selectedApplications.length > 0 && (
-                <div className="border-t pt-4 mt-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      {selectedApplications.length} application(s) selected
-                    </span>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        Bulk Update Status
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        Export Selected
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Modals */}
+        {selectedStudentId && (
+          <StudentProfileModal
+            userId={selectedStudentId}
+            isOpen={showProfileModal}
+            onClose={() => {
+              setShowProfileModal(false)
+              setSelectedStudentId(null)
+            }}
+          />
+        )}
+
+        <ExportModal
+          applications={filteredApplications}
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          jobTitle={selectedJob !== "all" ? jobs.find(j => j.$id === selectedJob)?.title : undefined}
+        />
+
+        <BulkUpdateModal
+          selectedApplications={selectedApplications}
+          applications={filteredApplications}
+          isOpen={showBulkUpdateModal}
+          onClose={() => setShowBulkUpdateModal(false)}
+          onUpdate={handleBulkStatusUpdate}
+        />
       </div>
     </AdminRoute>
   )
