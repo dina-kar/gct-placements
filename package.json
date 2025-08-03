@@ -7,9 +7,8 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "setup:appwrite": "node scripts/setup-collections.js",
-    "setup:attributes": "node scripts/setup-attributes-only.js",
-    "setup:optimized": "node scripts/setup-attributes-optimized.js",
+    "setup:appwrite-export": "node scripts/export.js",
+    "setup:appwrite-import": "node scripts/import.js",
     "create:admin": "node scripts/create-initial-admin.js"
   },
   "dependencies": {
