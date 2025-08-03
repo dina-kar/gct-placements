@@ -105,6 +105,34 @@ Follow the detailed setup guide in `scripts/setup-appwrite.md` to:
 - Set up database collections
 - Configure storage buckets
 - Set permissions and security rules
+Docker command to run appwrite locally
+
+For linux and Mac os:
+```bash
+docker run -it --rm \
+    --volume /var/run/docker.sock:/var/run/docker.sock \
+    --volume "$(pwd)"/appwrite:/usr/src/code/appwrite:rw \
+    --entrypoint="install" \
+    appwrite/appwrite:1.7.4
+```
+
+For Windows:
+In Command prompt,
+```bash
+docker run -it --rm ^
+    --volume //var/run/docker.sock:/var/run/docker.sock ^
+    --volume "%cd%"/appwrite:/usr/src/code/appwrite:rw ^
+    --entrypoint="install" ^
+    appwrite/appwrite:1.7.4
+```
+In powershell
+```bash
+docker run -it --rm `
+    --volume /var/run/docker.sock:/var/run/docker.sock `
+    --volume ${pwd}/appwrite:/usr/src/code/appwrite:rw `
+    --entrypoint="install" `
+    appwrite/appwrite:1.7.4
+```
 
 ### 4. Run Development Server
 
