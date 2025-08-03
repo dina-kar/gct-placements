@@ -60,6 +60,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const currentUser = await AuthService.getCurrentUser()
       setUser(currentUser)
     } catch (error) {
+      // Handle authentication errors gracefully
+      console.log('No active session found, user is not authenticated')
       setUser(null)
     } finally {
       setLoading(false)

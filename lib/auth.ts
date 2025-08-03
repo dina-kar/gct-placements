@@ -306,8 +306,13 @@ export class AuthService {
         name: user.name || (userProfile ? userProfile.fullName : 'User')
       }
     } catch (error) {
+      // Don't log error for unauthenticated users (guests) - this is expected
+      if (error instanceof AppwriteException && error.code === 401) {
+        // User is not authenticated, which is normal for guests
+        throw error
+      }
       console.error('getCurrentUser failed:', error)
-      return null
+      throw error
     }
   }
 
