@@ -21,6 +21,8 @@ import {
   GraduationCap,
   User,
   Briefcase,
+  Edit,
+  Trash2,
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
@@ -66,10 +68,30 @@ export default function PlacementsPage() {
     }
   }
 
-  // Get file preview URL
+  const editPlacement = (placement: Placement) => {
+    // For now, redirect to edit page - you can create an edit form modal later
+    window.location.href = `/admin/edit-placement/${placement.$id}`
+  }
+
+  const deletePlacement = async (placementId: string) => {
+    if (!window.confirm('Are you sure you want to delete this placement record? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      await DatabaseService.deletePlacement(placementId)
+      await fetchPlacements() // Refresh the list
+      alert('Placement record deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting placement:', error)
+      alert('Failed to delete placement record. Please try again.')
+    }
+  }
+
+  // Get file preview URL using the correct format
   const getFilePreviewUrl = (fileId: string) => {
     if (!fileId) return "/placeholder-user.jpg"
-    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/preview?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
   }
 
   const downloadFile = async (fileId: string, filename: string) => {
@@ -344,6 +366,23 @@ export default function PlacementsPage() {
                               Offer Letter
                             </Button>
                           )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => editPlacement(placement)}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deletePlacement(placement.$id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
                         </div>
                       )}
                     </CardContent>
@@ -448,6 +487,27 @@ export default function PlacementsPage() {
                                 <Download className="w-4 h-4 mr-2" />
                                 Download Offer Letter
                               </Button>
+                            )}
+                            {isAdmin && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => editPlacement(placement)}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deletePlacement(placement.$id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>

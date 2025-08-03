@@ -51,12 +51,11 @@ function AddJobPageContent() {
     "Information Technology",
     "Electronics and Communication Engineering",
     "Electrical and Electronics Engineering",
+    "Electronics and Instrumentation Engineering",
     "Mechanical Engineering",
     "Civil Engineering",
-    "Chemical Engineering",
-    "Textile Technology",
     "Production Engineering",
-    "Biomedical Engineering",
+    "Industrial Biotechnology",
   ]
 
   const jobTypes = ["Full-time", "Internship", "Part-time", "Contract"]

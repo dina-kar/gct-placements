@@ -554,10 +554,47 @@ export class DatabaseService {
         config.databaseId,
         config.collections.placements,
         [
-          Query.limit(1000)
+          Query.limit(1000),
+          Query.orderDesc('placedAt')
         ]
       )
-      return response.documents as unknown as Placement[]
+      
+      // Enrich placements with user profile data if userId exists and no manual data
+      const enrichedPlacements = await Promise.all(
+        response.documents.map(async (placement: any) => {
+          try {
+            // If manual student data is provided, use it
+            if (placement.studentName) {
+              return placement as Placement
+            }
+            
+            // Otherwise, try to fetch from user profile
+            if (placement.userId && placement.userId !== `manual_${Date.now()}`) {
+              try {
+                const userProfile = await this.getUserProfile(placement.userId)
+                return {
+                  ...placement,
+                  studentName: userProfile.fullName || 'N/A',
+                  studentId: userProfile.rollNo || 'N/A',
+                  studentEmail: userProfile.collegeEmail || userProfile.personalEmail || 'N/A',
+                  department: userProfile.department || 'N/A',
+                  batch: userProfile.batch || 'N/A'
+                } as Placement
+              } catch (profileError) {
+                console.warn(`Could not fetch profile for user ${placement.userId}:`, profileError)
+                return placement as Placement
+              }
+            }
+            
+            return placement as Placement
+          } catch (error) {
+            console.error('Error enriching placement:', error)
+            return placement as Placement
+          }
+        })
+      )
+      
+      return enrichedPlacements
     } catch (error) {
       console.error('Error fetching placements:', error)
       throw error
@@ -571,7 +608,27 @@ export class DatabaseService {
         config.collections.placements,
         placementId
       )
-      return placement as unknown as Placement
+      
+      const placementData = placement as unknown as any
+      
+      // Enrich with user profile data if available and no manual data
+      try {
+        if (!placementData.studentName && placementData.userId && placementData.userId !== `manual_${Date.now()}`) {
+          const userProfile = await this.getUserProfile(placementData.userId)
+          return {
+            ...placementData,
+            studentName: userProfile.fullName || 'N/A',
+            studentId: userProfile.rollNo || 'N/A',
+            studentEmail: userProfile.collegeEmail || userProfile.personalEmail || 'N/A',
+            department: userProfile.department || 'N/A',
+            batch: userProfile.batch || 'N/A'
+          } as Placement
+        }
+      } catch (profileError) {
+        console.warn(`Could not fetch profile for user ${placementData.userId}:`, profileError)
+      }
+      
+      return placementData as Placement
     } catch (error) {
       console.error('Error fetching placement:', error)
       throw error

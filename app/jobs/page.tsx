@@ -41,8 +41,11 @@ export default function JobsPage() {
     "Information Technology",
     "Electronics and Communication Engineering",
     "Electrical and Electronics Engineering",
+    "Electronics and Instrumentation Engineering",
     "Mechanical Engineering",
     "Civil Engineering",
+    "Production Engineering",
+    "Industrial Biotechnology",
   ]
 
   const locations = ["All Locations", "Bangalore", "Chennai", "Hyderabad", "Mumbai", "Pune", "Delhi NCR", "Remote"]

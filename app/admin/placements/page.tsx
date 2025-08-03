@@ -12,7 +12,7 @@ export default function AdminPlacementsRedirect() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div>Redirecting to placements...</div>
+      <div>Redirecting to placements management...</div>
     </div>
   )
 } 

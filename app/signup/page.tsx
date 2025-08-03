@@ -40,12 +40,11 @@ export default function SignupPage() {
     "Information Technology",
     "Electronics and Communication Engineering",
     "Electrical and Electronics Engineering",
+    "Electronics and Instrumentation Engineering",
     "Mechanical Engineering",
     "Civil Engineering",
-    "Chemical Engineering",
-    "Textile Technology",
     "Production Engineering",
-    "Biomedical Engineering",
+    "Industrial Biotechnology",
   ]
 
   const batches = ["2021-2025", "2022-2026", "2023-2027", "2024-2028", "2025-2029"]

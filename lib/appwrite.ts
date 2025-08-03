@@ -195,6 +195,13 @@ export interface Placement {
   placedAt: string
   photo?: string
   offerLetter?: string
+  // Student information (from user profile or manual entry)
+  studentName?: string
+  studentId?: string
+  studentEmail?: string
+  department?: string
+  batch?: string
+  testimonial?: string
   createdAt: string
   updatedAt?: string
 }

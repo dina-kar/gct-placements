@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,13 +13,17 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Building2, ArrowLeft, Upload, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { DatabaseService } from "@/lib/database"
 import { AdminRoute } from "@/components/ProtectedRoute"
 
-export default function AddPlacementPage() {
+export default function EditPlacementPage() {
   const router = useRouter()
+  const params = useParams()
+  const placementId = params.id as string
+  
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
   const [message, setMessage] = useState({ type: "", text: "" })
 
   const [formData, setFormData] = useState({
@@ -39,6 +43,8 @@ export default function AddPlacementPage() {
     jobId: "",
     photo: null as File | null,
     offerLetter: null as File | null,
+    existingPhoto: "",
+    existingOfferLetter: "",
   })
 
   const departments = [
@@ -54,6 +60,48 @@ export default function AddPlacementPage() {
   ]
 
   const batches = ["2025", "2026", "2027", "2028"]
+
+  useEffect(() => {
+    if (placementId) {
+      fetchPlacementData()
+    }
+  }, [placementId])
+
+  const fetchPlacementData = async () => {
+    try {
+      setIsLoadingData(true)
+      const placement = await DatabaseService.getPlacement(placementId)
+      
+      setFormData({
+        studentName: placement.studentName || "",
+        studentId: placement.studentId || "",
+        studentEmail: placement.studentEmail || "",
+        department: placement.department || "",
+        batch: placement.batch || "",
+        company: placement.company || "",
+        position: placement.position || "",
+        package: placement.package || "",
+        location: placement.location || "",
+        joiningDate: placement.joiningDate || "",
+        offerLetterDate: placement.offerLetterDate || "",
+        placedAt: placement.placedAt || "",
+        testimonial: placement.testimonial || "",
+        jobId: placement.jobId || "",
+        photo: null,
+        offerLetter: null,
+        existingPhoto: placement.photo || "",
+        existingOfferLetter: placement.offerLetter || "",
+      })
+    } catch (error) {
+      console.error('Error fetching placement data:', error)
+      setMessage({
+        type: "error",
+        text: "Failed to load placement data. Please try again.",
+      })
+    } finally {
+      setIsLoadingData(false)
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: "photo" | "offerLetter") => {
     if (e.target.files && e.target.files[0]) {
@@ -75,21 +123,37 @@ export default function AddPlacementPage() {
         throw new Error("Please fill in all required fields: Student Name, Company, and Package")
       }
 
-      // Upload files if provided
-      let photoFileId = null
-      let offerLetterFileId = null
+      // Upload new files if provided
+      let photoFileId = formData.existingPhoto
+      let offerLetterFileId = formData.existingOfferLetter
 
       if (formData.photo) {
         const photoUpload = await DatabaseService.uploadFile(formData.photo)
         photoFileId = photoUpload.$id
+        // Delete old photo if it exists
+        if (formData.existingPhoto) {
+          try {
+            await DatabaseService.deleteFile(formData.existingPhoto)
+          } catch (error) {
+            console.warn('Could not delete old photo:', error)
+          }
+        }
       }
 
       if (formData.offerLetter) {
         const offerLetterUpload = await DatabaseService.uploadFile(formData.offerLetter)
         offerLetterFileId = offerLetterUpload.$id
+        // Delete old offer letter if it exists
+        if (formData.existingOfferLetter) {
+          try {
+            await DatabaseService.deleteFile(formData.existingOfferLetter)
+          } catch (error) {
+            console.warn('Could not delete old offer letter:', error)
+          }
+        }
       }
 
-      // Create placement record with both required database fields and additional student info
+      // Update placement record
       const placementData = {
         userId: formData.studentEmail || `manual_${Date.now()}`,
         jobId: formData.jobId || `manual_job_${Date.now()}`,
@@ -111,26 +175,36 @@ export default function AddPlacementPage() {
         testimonial: formData.testimonial
       }
 
-      await DatabaseService.createPlacement(placementData)
+      await DatabaseService.updatePlacement(placementId, placementData)
 
       setMessage({
         type: "success",
-        text: "Placement record added successfully!",
+        text: "Placement record updated successfully!",
       })
 
-      // Reset form after successful submission
+      // Redirect after successful update
       setTimeout(() => {
         router.push("/placements")
       }, 2000)
     } catch (error: any) {
-      console.error('Error creating placement:', error)
+      console.error('Error updating placement:', error)
       setMessage({
         type: "error",
-        text: error.message || "Failed to add placement record. Please try again.",
+        text: error.message || "Failed to update placement record. Please try again.",
       })
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isLoadingData) {
+    return (
+      <AdminRoute>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div>Loading placement data...</div>
+        </div>
+      </AdminRoute>
+    )
   }
 
   return (
@@ -139,10 +213,10 @@ export default function AddPlacementPage() {
         {/* Header */}
         <header className="bg-white border-b">
           <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-            <Link href="/admin/dashboard">
+            <Link href="/placements">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                Back to Placements
               </Button>
             </Link>
             <div className="flex items-center gap-3">
@@ -151,7 +225,7 @@ export default function AddPlacementPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
-                <p className="text-sm text-gray-600">Add New Placement</p>
+                <p className="text-sm text-gray-600">Edit Placement Record</p>
               </div>
             </div>
           </div>
@@ -160,8 +234,8 @@ export default function AddPlacementPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Placement Record</h1>
-              <p className="text-gray-600">Create a new placement record for a student</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Placement Record</h1>
+              <p className="text-gray-600">Update the placement information for {formData.studentName}</p>
             </div>
 
             {message.text && (
@@ -183,7 +257,7 @@ export default function AddPlacementPage() {
               <CardHeader>
                 <CardTitle>Placement Information</CardTitle>
                 <CardDescription>
-                  Fill in the details of the student's placement. All fields marked with * are required.
+                  Update the details of the student's placement. All fields marked with * are required.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -224,7 +298,6 @@ export default function AddPlacementPage() {
                           value={formData.studentEmail}
                           onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
                         />
-                        <p className="text-xs text-gray-500">Used to link with existing student profile if available</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="department">Department</Label>
@@ -327,7 +400,6 @@ export default function AddPlacementPage() {
                           onChange={(date) => setFormData({ ...formData, placedAt: date })}
                           placeholder="Select placement date"
                         />
-                        <p className="text-xs text-gray-500">Date when student got placed</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="offerLetterDate">Offer Letter Date</Label>
@@ -380,8 +452,11 @@ export default function AddPlacementPage() {
                           />
                           <Upload className="w-4 h-4 text-gray-400" />
                         </div>
+                        {formData.existingPhoto && !formData.photo && (
+                          <p className="text-xs text-gray-500">Current photo exists. Upload new to replace.</p>
+                        )}
                         {formData.photo && (
-                          <p className="text-xs text-gray-500">Selected: {formData.photo.name}</p>
+                          <p className="text-xs text-gray-500">New photo: {formData.photo.name}</p>
                         )}
                       </div>
                       <div className="space-y-2">
@@ -395,21 +470,24 @@ export default function AddPlacementPage() {
                           />
                           <Upload className="w-4 h-4 text-gray-400" />
                         </div>
+                        {formData.existingOfferLetter && !formData.offerLetter && (
+                          <p className="text-xs text-gray-500">Current offer letter exists. Upload new to replace.</p>
+                        )}
                         {formData.offerLetter && (
-                          <p className="text-xs text-gray-500">Selected: {formData.offerLetter.name}</p>
+                          <p className="text-xs text-gray-500">New offer letter: {formData.offerLetter.name}</p>
                         )}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex justify-end gap-4">
-                    <Link href="/admin/dashboard">
+                    <Link href="/placements">
                       <Button type="button" variant="outline">
                         Cancel
                       </Button>
                     </Link>
                     <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Adding..." : "Add Placement Record"}
+                      {isLoading ? "Updating..." : "Update Placement Record"}
                     </Button>
                   </div>
                 </form>

@@ -61,7 +61,7 @@ function ManageAdminsPageContent() {
 
       const adminData = {
         email: formData.email,
-        role: formData.role,
+        role: formData.role as AdminRole["role"],
         name: formData.name,
         department: formData.department || undefined,
         isActive: true,
@@ -123,12 +123,11 @@ function ManageAdminsPageContent() {
     "Information Technology",
     "Electronics and Communication Engineering",
     "Electrical and Electronics Engineering",
+    "Electronics and Instrumentation Engineering",
     "Mechanical Engineering",
     "Civil Engineering",
-    "Chemical Engineering",
-    "Textile Technology",
     "Production Engineering",
-    "Biomedical Engineering",
+    "Industrial Biotechnology",
   ]
 
   return (
