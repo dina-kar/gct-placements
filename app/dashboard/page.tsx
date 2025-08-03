@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -28,12 +28,66 @@ import { Job } from "@/lib/appwrite"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 
 export default function StudentDashboard() {
-  const { user, logout, isAuthenticated, isPlacementRep, isAdmin } = useAuth()
+  const { user, logout, isAuthenticated, isPlacementRep, isAdmin, refreshUser } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [profileCompletion, setProfileCompletion] = useState(0)
   const router = useRouter()
+
+  // Get file preview URL for images
+  const getFilePreviewUrl = (fileId: string) => {
+    if (!fileId) return "/placeholder-user.jpg"
+    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/preview?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+  }
+
+  const calculateProfileCompletion = useCallback(() => {
+    if (!user || !user.profile) {
+      setProfileCompletion(0)
+      return
+    }
+    
+    const profile = user.profile
+    
+    // Essential fields for profile completion
+    const essentialFields = [
+      'fullName',
+      'collegeEmail', 
+      'personalEmail',
+      'phoneNo',
+      'rollNo',
+      'batch',
+      'department',
+      'currentCgpa',
+    ]
+    
+    // Additional important fields
+    const additionalFields = [
+      'dateOfBirth',
+      'gender',
+      'currentAddress',
+      'city',
+      'tenthMarkPercent',
+      'twelthMarkPercent',
+      'resume',
+      'profilePicture'
+    ]
+    
+    // All fields combined
+    const allFields = [...essentialFields, ...additionalFields]
+    let filledFields = 0
+    
+    allFields.forEach(field => {
+      const value = profile[field]
+      if (value && value.toString().trim() !== '' && value !== 'N/A') {
+        filledFields++
+      }
+    })
+    
+    // Calculate completion percentage
+    const completion = Math.round((filledFields / allFields.length) * 100)
+    setProfileCompletion(completion)
+  }, [user])
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -41,7 +95,39 @@ export default function StudentDashboard() {
       fetchApplications()
       calculateProfileCompletion()
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user, calculateProfileCompletion])
+
+  // Additional useEffect to recalculate profile completion when user profile changes
+  useEffect(() => {
+    if (user?.profile) {
+      calculateProfileCompletion()
+    }
+  }, [user?.profile, calculateProfileCompletion])
+
+  // Recalculate profile completion when user returns to the page
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && user?.profile) {
+        await refreshUser()
+        calculateProfileCompletion()
+      }
+    }
+
+    const handleFocus = async () => {
+      if (user?.profile) {
+        await refreshUser()
+        calculateProfileCompletion()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [user?.profile, refreshUser, calculateProfileCompletion])
 
   const fetchRecentJobs = async () => {
     try {
@@ -64,30 +150,6 @@ export default function StudentDashboard() {
     } catch (error) {
       console.error('Error fetching applications:', error)
     }
-  }
-
-  // Get file preview URL for images
-  const getFilePreviewUrl = (fileId: string) => {
-    if (!fileId) return "/placeholder-user.jpg"
-    return `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID}/files/${fileId}/preview?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
-  }
-
-  const calculateProfileCompletion = () => {
-    if (!user || !user.profile) return
-    
-    let completion = 0
-    const profile = user.profile
-    const fields = [
-      'fullName', 'collegeEmail', 'department', 
-      'batch', 'currentCgpa', 'phoneNo', 'rollNo', 'resume'
-    ]
-    
-    fields.forEach(field => {
-      if (profile[field] && profile[field].trim() !== '') {
-        completion += (100 / fields.length)
-      }
-    })
-    setProfileCompletion(Math.round(completion))
   }
 
   const handleLogout = async () => {
@@ -208,7 +270,16 @@ export default function StudentDashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{profileCompletion}%</div>
                 <Progress value={profileCompletion} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-2">Complete your profile to increase visibility</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {profileCompletion >= 80 ? 
+                    "Excellent! Your profile is well-completed" :
+                    profileCompletion >= 60 ?
+                    "Good progress! Add more details to improve visibility" :
+                    profileCompletion >= 40 ?
+                    "Getting there! Complete more fields to attract recruiters" :
+                    "Complete your profile to increase your chances"
+                  }
+                </p>
               </CardContent>
             </Card>
 
