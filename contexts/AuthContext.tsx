@@ -8,7 +8,7 @@ interface AuthContextType {
   user: any | null
   loading: boolean
   login: (email: string) => Promise<{ success: boolean; message: string; token?: string }>
-  verifyOTP: (userId: string, otp: string) => Promise<{ success: boolean; message: string }>
+  verifyOTP: (userId: string, otp: string) => Promise<{ success: boolean; message: string; user?: any }>
   signup: (data: {
     email: string
     fullName: string
@@ -29,6 +29,7 @@ interface AuthContextType {
   hasStudentAccess: boolean
   hasAdminOnlyAccess: boolean
   hasRole: (role: UserRole) => boolean
+  isProfileIncomplete: (user: any) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -121,6 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hasStudentAccess = AuthService.hasStudentAccess(user)
   const hasAdminOnlyAccess = AuthService.hasAdminOnlyAccess(user)
   const hasRole = (role: UserRole) => AuthService.hasRole(user, role)
+  const isProfileIncomplete = (user: any) => AuthService.isProfileIncomplete(user)
 
   const value = {
     user,
@@ -139,6 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasStudentAccess,
     hasAdminOnlyAccess,
     hasRole,
+    isProfileIncomplete,
   }
 
   return (

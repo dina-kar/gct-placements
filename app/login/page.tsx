@@ -58,10 +58,29 @@ export default function LoginPage() {
       
       if (result.success) {
         setSuccess("Login successful! Redirecting...")
-        // Redirect based on user role or to dashboard
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 1000)
+        
+        // Check if user profile needs completion (for manually added emails)
+        if (result.user && result.user.profile) {
+          const profile = result.user.profile
+          const needsProfileCompletion = !profile.rollNo || !profile.department || !profile.batch || !profile.fullName || profile.fullName === 'User'
+          
+          if (needsProfileCompletion) {
+            // Redirect to profile completion
+            setTimeout(() => {
+              router.push("/profile?complete=true")
+            }, 1000)
+          } else {
+            // Profile is complete, redirect to dashboard
+            setTimeout(() => {
+              router.push("/dashboard")
+            }, 1000)
+          }
+        } else {
+          // No profile found, redirect to dashboard (will be handled there)
+          setTimeout(() => {
+            router.push("/dashboard")
+          }, 1000)
+        }
       } else {
         setError(result.message)
       }
@@ -131,7 +150,7 @@ export default function LoginPage() {
             </CardTitle>
             <CardDescription className="text-center">
               {step === 'email' 
-                ? 'Enter your GCT email address to receive an OTP' 
+                ? 'Enter your email address to receive an OTP' 
                 : `We've sent a 6-digit code to ${formData.email}`
               }
             </CardDescription>
@@ -158,13 +177,13 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your.email@gct.ac.in"
+                    placeholder="your.email@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
                   <p className="text-xs text-gray-500">
-                    Please use your official GCT email address
+                    Enter your email address. If you don't have a GCT email, contact the placement rep.
                   </p>
                 </div>
 
