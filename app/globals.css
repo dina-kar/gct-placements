@@ -2,51 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design Tokens */
 @layer base {
   :root {
+    /* Surfaces */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 224 71% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 71% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 270 95% 65%;
+    --popover-foreground: 224 71% 4%;
+
+    /* Brand Palette (violet/indigo) */
+    --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --primary-600: 263 85% 52%;
+    --primary-700: 263 72% 45%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 221 39% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 226 100% 97%;
+    --accent-foreground: 224 71% 4%;
+
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 270 95% 65%;
-    --radius: 1rem;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 262 83% 58%;
+
+    /* Radius */
+    --radius: 0.875rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 10px 20px -10px hsl(262 83% 58% / 0.25), 0 6px 10px -8px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 20px 40px -20px hsl(262 83% 58% / 0.35), 0 12px 24px -16px rgb(0 0 0 / 0.12);
+
+    /* Gradient helpers */
+    --grad-from: 245 100% 70%;
+    --grad-to: 262 83% 58%;
+
+    /* Container */
+    --container: 1200px;
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 3%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 3%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 270 100% 70%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 10% 3.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 10% 3.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 10% 3.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 3.9%;
-    --input: 240 10% 3.9%;
-    --ring: 270 100% 70%;
-    --radius: 1rem;
+    --background: 224 71% 3%;
+    --foreground: 210 40% 98%;
+    --card: 224 71% 4%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 262 83% 72%;
+    --primary-foreground: 224 71% 4%;
+    --primary-600: 262 83% 66%;
+    --primary-700: 262 83% 60%;
+
+    --secondary: 220 14% 10%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 220 14% 10%;
+    --muted-foreground: 217 14% 65%;
+
+    --accent: 262 83% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 14% 15%;
+    --input: 220 14% 15%;
+    --ring: 262 83% 72%;
+
+    --radius: 0.875rem;
   }
 }
 
@@ -55,40 +89,85 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+  /* Headings scale */
+  h1 { @apply tracking-tight; }
+  h2 { @apply tracking-tight; }
+  h3 { @apply tracking-tight; }
+}
+
+/* Utilities */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all;
+    background-image: linear-gradient(90deg, hsl(var(--grad-from)), hsl(var(--grad-to)));
+  }
+  .btn-primary:hover {
+    filter: brightness(0.98);
+    box-shadow: var(--shadow);
+  }
+  .btn-outline-strong {
+    @apply inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-semibold border;
+    border-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--primary-700));
+    background: hsl(var(--primary) / 0.03);
+  }
+  .btn-outline-strong:hover {
+    background: hsl(var(--primary) / 0.08);
+  }
+
+  .glass {
+    background: linear-gradient(180deg, hsl(var(--background) / 0.7), hsl(var(--background) / 0.4));
+    backdrop-filter: blur(10px);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .card-soft {
+    @apply rounded-xl border;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-hover {
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: hsl(var(--primary) / 0.25);
+  }
+
+  .gradient-text {
+    background-image: linear-gradient(90deg, hsl(var(--grad-from)), hsl(var(--grad-to)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }
 
-/* Custom Animations */
+/* Animations */
 @keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
 }
+.animate-float { animation: float 6s ease-in-out infinite; }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35); }
+  70% { box-shadow: 0 0 0 14px hsl(var(--primary) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
 }
+.pulse-ring { animation: pulse-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
 
 /* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 /* Dark mode transitions */
 .transition-colors {
   transition-property: background-color, border-color, color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 500ms;
+  transition-duration: 400ms;
 }
 
 /* Apply dark mode by default */
-html {
-  @apply dark;
-}
+html { @apply dark; }

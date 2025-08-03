@@ -27,6 +27,8 @@ const config = {
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
+          600: "hsl(var(--primary-600))",
+          700: "hsl(var(--primary-700))",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -58,6 +60,7 @@ const config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 2px)",
       },
       keyframes: {
         "accordion-down": {
@@ -72,6 +75,8 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "float": "float 6s ease-in-out infinite",
+        "pulse-ring": "pulse-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite",
       },
     },
   },
