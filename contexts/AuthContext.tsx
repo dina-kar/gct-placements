@@ -20,6 +20,7 @@ interface AuthContextType {
   }) => Promise<{ success: boolean; message: string; user?: any }>
   completeRegistration: (userData: any) => Promise<{ success: boolean; message: string }>
   logout: () => Promise<void>
+  refreshUser: () => Promise<void>
   isAuthenticated: boolean
   isAdmin: boolean
   isPlacementRep: boolean
@@ -103,6 +104,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null)
   }
 
+  const refreshUser = async () => {
+    try {
+      const currentUser = await AuthService.getCurrentUser()
+      setUser(currentUser)
+    } catch (error) {
+      console.error('Error refreshing user:', error)
+    }
+  }
+
   const isAuthenticated = !!user
   const isAdmin = AuthService.isAdmin(user)
   const isPlacementRep = AuthService.isPlacementRep(user)
@@ -120,6 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signup,
     completeRegistration,
     logout,
+    refreshUser,
     isAuthenticated,
     isAdmin,
     isPlacementRep,
