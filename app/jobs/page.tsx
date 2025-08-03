@@ -29,6 +29,7 @@ export default function JobsPage() {
   const { user, isAuthenticated } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [applications, setApplications] = useState<any[]>([])
+  const [applicationCounts, setApplicationCounts] = useState<{[jobId: string]: number}>({})
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterDepartment, setFilterDepartment] = useState("all")
@@ -62,10 +63,35 @@ export default function JobsPage() {
     try {
       const response = await DatabaseService.getJobs()
       setJobs(response)
+      // Fetch application counts for all jobs
+      await fetchApplicationCounts(response)
     } catch (error) {
       console.error('Error fetching jobs:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchApplicationCounts = async (jobsList: Job[]) => {
+    try {
+      const counts: {[jobId: string]: number} = {}
+      
+      // Fetch application count for each job
+      await Promise.all(
+        jobsList.map(async (job) => {
+          try {
+            const jobApplications = await DatabaseService.getJobApplications(job.$id)
+            counts[job.$id] = jobApplications.length
+          } catch (error) {
+            console.error(`Error fetching applications for job ${job.$id}:`, error)
+            counts[job.$id] = 0
+          }
+        })
+      )
+      
+      setApplicationCounts(counts)
+    } catch (error) {
+      console.error('Error fetching application counts:', error)
     }
   }
 
@@ -118,8 +144,7 @@ export default function JobsPage() {
   }
 
   const getApplicationCount = (jobId: string) => {
-    // This would normally come from the backend
-    return Math.floor(Math.random() * 50) + 10
+    return applicationCounts[jobId] || 0
   }
 
   // Filter jobs based on search term, filters, and tab
