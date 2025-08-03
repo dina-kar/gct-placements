@@ -310,7 +310,7 @@ function ProfilePageContent() {
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
+                  Back  
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
@@ -318,7 +318,7 @@ function ProfilePageContent() {
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Profile Management</h1>
+                  <h1 className="text-xl font-bold text-gray-900">Profile</h1>
                   <p className="text-sm text-gray-600">Update your information</p>
                 </div>
               </div>
@@ -370,48 +370,57 @@ function ProfilePageContent() {
         {/* Profile Header */}
         <Card className="mb-8">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={profileData.profilePicture ? getFilePreviewUrl(profileData.profilePicture) : undefined} />
-                  <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-semibold">
-                    {getInitials(profileData.fullName || "User")}
-                  </AvatarFallback>
-                </Avatar>
-                {isEditing && (
-                  <div className="absolute -bottom-2 -right-2 flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 w-8 p-0"
-                      onClick={() => handleFileUpload("profilePicture")}
-                      disabled={isUploading}
-                    >
-                      <Upload className="w-4 h-4" />
-                    </Button>
-                    {profileData.profilePicture && (
+            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+              {/* Profile Image Section */}
+              <div className="flex justify-center lg:justify-start">
+                <div className="relative">
+                  <Avatar className="w-24 h-24">
+                    <AvatarImage src={profileData.profilePicture ? getFilePreviewUrl(profileData.profilePicture) : undefined} />
+                    <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-semibold">
+                      {getInitials(profileData.fullName || "User")}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isEditing && (
+                    <div className="absolute -bottom-2 -right-2 flex gap-1">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        onClick={() => handleFileDelete("profilePicture")}
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleFileUpload("profilePicture")}
+                        disabled={isUploading}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Upload className="w-4 h-4" />
                       </Button>
-                    )}
-                  </div>
-                )}
+                      {profileData.profilePicture && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          onClick={() => handleFileDelete("profilePicture")}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900">
+              
+              {/* Profile Info Section */}
+              <div className="flex-1 text-center lg:text-left space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-3">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                     {profileData.fullName || "User"}
                   </h2>
                   {profileData.isPlacementRep && (
-                    <Badge variant="secondary">Placement Rep</Badge>
+                    <Badge variant="secondary" className="mx-auto lg:mx-0 w-fit">
+                      Placement Rep
+                    </Badge>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2 mb-2">
+                
+                {/* Academic Badges */}
+                <div className="flex flex-wrap justify-center lg:justify-start gap-2">
                   <Badge variant="outline">
                     <GraduationCap className="w-3 h-3 mr-1" />
                     {profileData.batch || "N/A"}
@@ -422,23 +431,25 @@ function ProfilePageContent() {
                   </Badge>
                   <Badge variant="outline">CGPA: {profileData.currentCgpa || "N/A"}</Badge>
                 </div>
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                
+                {/* Contact Information */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4 text-sm text-gray-600">
                   {profileData.collegeEmail && (
-                    <div className="flex items-center gap-1">
-                      <Mail className="w-4 h-4" />
-                      {profileData.collegeEmail}
+                    <div className="flex items-center justify-center lg:justify-start gap-1">
+                      <Mail className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{profileData.collegeEmail}</span>
                     </div>
                   )}
                   {profileData.phoneNo && (
-                    <div className="flex items-center gap-1">
-                      <Phone className="w-4 h-4" />
-                      {profileData.phoneNo}
+                    <div className="flex items-center justify-center lg:justify-start gap-1">
+                      <Phone className="w-4 h-4 flex-shrink-0" />
+                      <span>{profileData.phoneNo}</span>
                     </div>
                   )}
                   {profileData.city && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {profileData.city}
+                    <div className="flex items-center justify-center lg:justify-start gap-1">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span>{profileData.city}</span>
                     </div>
                   )}
                 </div>
@@ -449,11 +460,23 @@ function ProfilePageContent() {
 
         {/* Profile Tabs */}
         <Tabs defaultValue="basic" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="personal">Personal Details</TabsTrigger>
-            <TabsTrigger value="academic">Academic Info</TabsTrigger>
-            <TabsTrigger value="files">Files & Links</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="basic" className="text-xs sm:text-sm py-2 px-2 sm:px-4">
+              <span className="hidden sm:inline">Basic Info</span>
+              <span className="sm:hidden">Basic</span>
+            </TabsTrigger>
+            <TabsTrigger value="personal" className="text-xs sm:text-sm py-2 px-2 sm:px-4">
+              <span className="hidden sm:inline">Personal Details</span>
+              <span className="sm:hidden">Personal</span>
+            </TabsTrigger>
+            <TabsTrigger value="academic" className="text-xs sm:text-sm py-2 px-2 sm:px-4">
+              <span className="hidden sm:inline">Academic Info</span>
+              <span className="sm:hidden">Academic</span>
+            </TabsTrigger>
+            <TabsTrigger value="files" className="text-xs sm:text-sm py-2 px-2 sm:px-4">
+              <span className="hidden sm:inline">Files & Links</span>
+              <span className="sm:hidden">Files</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Basic Information */}
@@ -465,7 +488,7 @@ function ProfilePageContent() {
                   Your basic profile information and contact details
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name *</Label>
                   <Input
@@ -476,7 +499,7 @@ function ProfilePageContent() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="collegeEmail">College Email *</Label>
                     <Input
@@ -499,7 +522,7 @@ function ProfilePageContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="phoneNo">Phone Number</Label>
                     <Input
@@ -545,7 +568,7 @@ function ProfilePageContent() {
                   Additional personal information and family details
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
                   <Select
@@ -566,7 +589,7 @@ function ProfilePageContent() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="parentsName">Parent's/Guardian's Name</Label>
                     <Input
@@ -587,29 +610,31 @@ function ProfilePageContent() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="currentAddress">Current Address</Label>
-                  <Textarea
-                    id="currentAddress"
-                    value={profileData.currentAddress}
-                    onChange={(e) => setProfileData({ ...profileData, currentAddress: e.target.value })}
-                    disabled={!isEditing}
-                    rows={2}
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentAddress">Current Address</Label>
+                    <Textarea
+                      id="currentAddress"
+                      value={profileData.currentAddress}
+                      onChange={(e) => setProfileData({ ...profileData, currentAddress: e.target.value })}
+                      disabled={!isEditing}
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="permanentAddress">Permanent Address</Label>
+                    <Textarea
+                      id="permanentAddress"
+                      value={profileData.permanentAddress}
+                      onChange={(e) => setProfileData({ ...profileData, permanentAddress: e.target.value })}
+                      disabled={!isEditing}
+                      rows={2}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="permanentAddress">Permanent Address</Label>
-                  <Textarea
-                    id="permanentAddress"
-                    value={profileData.permanentAddress}
-                    onChange={(e) => setProfileData({ ...profileData, permanentAddress: e.target.value })}
-                    disabled={!isEditing}
-                    rows={2}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
                     <Input
@@ -630,7 +655,7 @@ function ProfilePageContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="aadharNo">Aadhar Number</Label>
                     <Input
@@ -663,8 +688,8 @@ function ProfilePageContent() {
                   Your educational background and academic performance
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="rollNo">Roll Number *</Label>
                     <Input
@@ -693,7 +718,7 @@ function ProfilePageContent() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                     <Label htmlFor="department">Department *</Label>
                     <Select
                       value={profileData.department}
@@ -714,7 +739,7 @@ function ProfilePageContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="currentCgpa">Current CGPA</Label>
                     <Input
@@ -746,7 +771,7 @@ function ProfilePageContent() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="diplomaMarkPercent">Diploma Percentage (if applicable)</Label>
+                    <Label htmlFor="diplomaMarkPercent" className="text-sm">Diploma % (if applicable)</Label>
                     <Input
                       id="diplomaMarkPercent"
                       value={profileData.diplomaMarkPercent}
@@ -758,9 +783,9 @@ function ProfilePageContent() {
                 </div>
 
                 {/* Semester-wise CGPA */}
-                <div>
+                <div className="space-y-4">
                   <Label className="text-base font-medium">Semester-wise CGPA</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {semesterLabels.map((sem, index) => {
                       const semKey = `sem${index + 1}Cgpa` as keyof typeof profileData
                       return (
@@ -779,7 +804,7 @@ function ProfilePageContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="historyOfArrear">History of Arrear</Label>
                     <Select
@@ -836,11 +861,11 @@ function ProfilePageContent() {
                   Upload your documents and add links to your professional profiles
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-8">
                 {/* Resume Upload */}
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label className="text-sm font-medium">Resume</Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button
                       variant="outline"
                       size="sm"
@@ -852,11 +877,12 @@ function ProfilePageContent() {
                       {isUploading ? "Uploading..." : "Upload Resume"}
                     </Button>
                     {profileData.resume && (
-                      <>
+                      <div className="flex gap-2">
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-4 h-4 mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Preview</span>
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[80vh]">
@@ -898,45 +924,48 @@ function ProfilePageContent() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                      </>
+                      </div>
                     )}
                   </div>
                   <p className="text-xs text-gray-500">PDF, DOC, DOCX up to 5MB</p>
                 </div>
 
                 {/* Social Profiles */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="githubProfile">GitHub Profile</Label>
-                    <div className="flex">
-                      <div className="flex items-center px-3 bg-gray-50 border border-r-0 rounded-l-md">
-                        <Github className="w-4 h-4 text-gray-500" />
+                <div className="space-y-6">
+                  <h3 className="text-sm font-medium">Professional Profiles</h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="githubProfile">GitHub Profile</Label>
+                      <div className="flex">
+                        <div className="flex items-center px-3 bg-gray-50 border border-r-0 rounded-l-md">
+                          <Github className="w-4 h-4 text-gray-500" />
+                        </div>
+                        <Input
+                          id="githubProfile"
+                          value={profileData.githubProfile}
+                          onChange={(e) => setProfileData({ ...profileData, githubProfile: e.target.value })}
+                          disabled={!isEditing}
+                          placeholder="https://github.com/username"
+                          className="rounded-l-none"
+                        />
                       </div>
-                      <Input
-                        id="githubProfile"
-                        value={profileData.githubProfile}
-                        onChange={(e) => setProfileData({ ...profileData, githubProfile: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="https://github.com/username"
-                        className="rounded-l-none"
-                      />
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedInProfile">LinkedIn Profile</Label>
-                    <div className="flex">
-                      <div className="flex items-center px-3 bg-gray-50 border border-r-0 rounded-l-md">
-                        <Linkedin className="w-4 h-4 text-gray-500" />
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedInProfile">LinkedIn Profile</Label>
+                      <div className="flex">
+                        <div className="flex items-center px-3 bg-gray-50 border border-r-0 rounded-l-md">
+                          <Linkedin className="w-4 h-4 text-gray-500" />
+                        </div>
+                        <Input
+                          id="linkedInProfile"
+                          value={profileData.linkedInProfile}
+                          onChange={(e) => setProfileData({ ...profileData, linkedInProfile: e.target.value })}
+                          disabled={!isEditing}
+                          placeholder="https://linkedin.com/in/username"
+                          className="rounded-l-none"
+                        />
                       </div>
-                      <Input
-                        id="linkedInProfile"
-                        value={profileData.linkedInProfile}
-                        onChange={(e) => setProfileData({ ...profileData, linkedInProfile: e.target.value })}
-                        disabled={!isEditing}
-                        placeholder="https://linkedin.com/in/username"
-                        className="rounded-l-none"
-                      />
                     </div>
                   </div>
                 </div>

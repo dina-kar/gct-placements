@@ -17,19 +17,25 @@ interface DatePickerProps {
 export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(
   ({ value, onChange, placeholder = "Pick a date", className }, ref) => {
     const [date, setDate] = React.useState<Date | undefined>(
-      value ? new Date(value) : undefined
+      value ? new Date(value + 'T00:00:00') : undefined
     )
 
     React.useEffect(() => {
       if (value) {
-        setDate(new Date(value))
+        setDate(new Date(value + 'T00:00:00'))
+      } else {
+        setDate(undefined)
       }
     }, [value])
 
     const handleDateSelect = (selectedDate: Date | undefined) => {
       setDate(selectedDate)
       if (selectedDate && onChange) {
-        onChange(selectedDate.toISOString().split('T')[0])
+        // Format the date in local timezone to avoid timezone offset issues
+        const year = selectedDate.getFullYear()
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+        const day = String(selectedDate.getDate()).padStart(2, '0')
+        onChange(`${year}-${month}-${day}`)
       }
     }
 

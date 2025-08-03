@@ -17,11 +17,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { DatabaseService } from "@/lib/database"
 import { AdminRoute } from "@/components/ProtectedRoute"
-
-// Custom DatePicker component since it's not in shadcn by default
-function DatePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  return <Input type="date" value={value} onChange={(e) => onChange(e.target.value)} />
-}
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 
 function AddJobPageContent() {
   const router = useRouter()
@@ -154,12 +150,12 @@ function AddJobPageContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <Link href="/admin/dashboard">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                Back
               </Button>
             </Link>
             <div className="flex items-center gap-3">
@@ -167,7 +163,7 @@ function AddJobPageContent() {
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
+                <h1 className="text-xl font-bold text-gray-900">Placement Portal</h1>
                 <p className="text-sm text-gray-600">Admin Dashboard</p>
               </div>
             </div>
@@ -175,11 +171,11 @@ function AddJobPageContent() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
         <div className="max-w-3xl mx-auto">
           {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Job Posting</h1>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Create Job Posting</h1>
             <p className="text-gray-600">Add a new job opportunity for students</p>
           </div>
 
@@ -381,16 +377,20 @@ function AddJobPageContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="applicationDeadline">Application Deadline *</Label>
-                      <DatePicker
+                      <DateTimePicker
                         value={formData.applicationDeadline}
-                        onChange={(value) => setFormData({ ...formData, applicationDeadline: value })}
+                        onChange={(value: string) => setFormData({ ...formData, applicationDeadline: value })}
+                        placeholder="Select application deadline with time"
+                        showTime={true}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="driveDate">Placement Drive Date</Label>
-                      <DatePicker
+                      <DateTimePicker
                         value={formData.driveDate}
-                        onChange={(value) => setFormData({ ...formData, driveDate: value })}
+                        onChange={(value: string) => setFormData({ ...formData, driveDate: value })}
+                        placeholder="Select drive date"
+                        showTime={false}
                       />
                     </div>
                   </div>

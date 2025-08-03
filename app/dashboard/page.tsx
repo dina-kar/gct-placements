@@ -143,42 +143,45 @@ export default function StudentDashboard() {
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-white" />
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Placement Portal</h1>
+                  <p className="text-sm text-gray-600">Student Dashboard</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
-                <p className="text-sm text-gray-600">Student Dashboard</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              {isPlacementRep && (
-                <Link href="/admin/dashboard">
-                  <Button variant="outline" size="sm">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Admin Panel
+              <div className="flex flex-wrap items-center gap-2">
+                {isPlacementRep && (
+                  <Link href="/admin/dashboard">
+                    <Button variant="outline" size="sm">
+                      <Building2 className="w-4 h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Admin Panel</span>
+                      <span className="sm:hidden">Admin</span>
+                    </Button>
+                  </Link>
+                )}
+                
+                <Link href="/profile">
+                  <Button variant="ghost" size="sm">
+                    <Settings className="w-4 h-4" />
                   </Button>
                 </Link>
-              )}
-              
-              <Link href="/profile">
-                <Button variant="ghost" size="sm">
-                  <Settings className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" />
                 </Button>
-              </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" />
-              </Button>
+              </div>
             </div>
           </div>
         </header>
 
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-6 sm:py-8">
           {/* Welcome Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
               <Avatar className="w-16 h-16">
                 <AvatarImage src={user?.profilePicture ? getFilePreviewUrl(user.profilePicture) : undefined} />
                 <AvatarFallback className="bg-blue-100 text-blue-600 text-xl font-semibold">
@@ -189,14 +192,14 @@ export default function StudentDashboard() {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
                 <p className="text-gray-600">Ready to take the next step in your career?</p>
               </div>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Profile Completion</CardTitle>
@@ -248,9 +251,9 @@ export default function StudentDashboard() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
             {/* Recent Job Openings */}
-            <div className="lg:col-span-2">
+            <div className="xl:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -297,7 +300,7 @@ export default function StudentDashboard() {
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-4 h-4" />
-                              Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
+                              Deadline: {new Date(job.applicationDeadline).toLocaleDateString()} {new Date(job.applicationDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             <span className="flex items-center gap-1">
                               <TrendingUp className="w-4 h-4" />
@@ -385,13 +388,7 @@ export default function StudentDashboard() {
                     ))
                   )}
 
-                  <div className="text-center pt-4">
-                    <Link href="/applications">
-                      <Button variant="outline" size="sm">
-                        View All Applications
-                      </Button>
-                    </Link>
-                  </div>
+                  
                 </CardContent>
               </Card>
 
