@@ -174,69 +174,125 @@ export default function PlacementsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href={getBackLink()}>
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to {isAdmin ? "Dashboard" : hasStudentAccess ? "Dashboard" : "Home"}
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                {isAdmin ? <Building2 className="w-6 h-6 text-white" /> : <GraduationCap className="w-6 h-6 text-white" />}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
-                <p className="text-sm text-gray-600">{isAdmin ? "Admin Dashboard" : "Our Success Stories"}</p>
-              </div>
-            </div>
-          </div>
-          {isAdmin && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
-              >
-                {viewMode === "grid" ? "Table View" : "Grid View"}
-              </Button>
-              <Link href="/admin/add-placement">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Placement
+        <div className="container mx-auto px-4 py-4">
+          {/* Mobile Layout */}
+          <div className="flex flex-col gap-4 md:hidden">
+            {/* Top Row: Back Button + Title */}
+            <div className="flex items-center justify-between">
+              <Link href={getBackLink()}>
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Back to {isAdmin ? "Dashboard" : hasStudentAccess ? "Dashboard" : "Home"}</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
               </Link>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  {isAdmin ? <Building2 className="w-5 h-5 text-white" /> : <GraduationCap className="w-5 h-5 text-white" />}
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">Placement Portal</h1>
+                </div>
+              </div>
             </div>
-          )}
+            
+            {/* Bottom Row: Admin Actions */}
+            {isAdmin && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
+                  className="flex-1"
+                >
+                  {viewMode === "grid" ? "Table View" : "Grid View"}
+                </Button>
+                <Link href="/admin/add-placement" className="flex-1">
+                  <Button className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Add Placement Record</span>
+                    <span className="sm:hidden">Add Record</span>
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden md:flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href={getBackLink()}>
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to {isAdmin ? "Dashboard" : hasStudentAccess ? "Dashboard" : "Home"}
+                </Button>
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  {isAdmin ? <Building2 className="w-6 h-6 text-white" /> : <GraduationCap className="w-6 h-6 text-white" />}
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Placement Portal</h1>
+                  <p className="text-sm text-gray-600">{isAdmin ? "Admin Dashboard" : "Our Success Stories"}</p>
+                </div>
+              </div>
+            </div>
+            {isAdmin && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
+                >
+                  {viewMode === "grid" ? "Table View" : "Grid View"}
+                </Button>
+                <Link href="/admin/add-placement">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Placement Record
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
         {/* Page Title */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{getPageTitle()}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+        <div className="mb-6 md:mb-8 text-center px-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">{getPageTitle()}</h1>
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             {getPageDescription()}
           </p>
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-          <div className="flex justify-center">
-            <TabsList>
-              <TabsTrigger value="all">All Placements ({placements.length})</TabsTrigger>
-              <TabsTrigger value="tech">Tech</TabsTrigger>
-              <TabsTrigger value="engineering">Engineering</TabsTrigger>
-              <TabsTrigger value="management">Management</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 md:mb-8">
+          <div className="flex justify-center px-4">
+            <TabsList className="grid w-full max-w-md grid-cols-2 sm:grid-cols-4 h-auto">
+              <TabsTrigger value="all" className="text-xs sm:text-sm py-2 px-2 sm:px-4">
+                <span className="hidden sm:inline">All Placements ({placements.length})</span>
+                <span className="sm:hidden">All ({placements.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="tech" className="text-xs sm:text-sm py-2 px-2 sm:px-4">Tech</TabsTrigger>
+              <TabsTrigger value="engineering" className="text-xs sm:text-sm py-2 px-2 sm:px-4">
+                <span className="hidden sm:inline">Engineering</span>
+                <span className="sm:hidden">Engg</span>
+              </TabsTrigger>
+              <TabsTrigger value="management" className="text-xs sm:text-sm py-2 px-2 sm:px-4">
+                <span className="hidden sm:inline">Management</span>
+                <span className="sm:hidden">Mgmt</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value={activeTab} className="mt-6">
             {/* Search and Filters */}
-            <div className="mb-8 max-w-5xl mx-auto">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
+            <div className="mb-6 md:mb-8 max-w-5xl mx-auto px-4">
+              <div className="flex flex-col gap-4">
+                {/* Search Bar */}
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder="Search by student name, ID, company, or position..."
@@ -245,9 +301,11 @@ export default function PlacementsPage() {
                     className="pl-10"
                   />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
+                
+                {/* Filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectTrigger>
                       <SelectValue placeholder="Department" />
                     </SelectTrigger>
                     <SelectContent>
@@ -260,7 +318,7 @@ export default function PlacementsPage() {
                     </SelectContent>
                   </Select>
                   <Select value={filterBatch} onValueChange={setFilterBatch}>
-                    <SelectTrigger className="w-full sm:w-[150px]">
+                    <SelectTrigger>
                       <SelectValue placeholder="Batch" />
                     </SelectTrigger>
                     <SelectContent>
@@ -294,7 +352,7 @@ export default function PlacementsPage() {
               </div>
             ) : viewMode === "grid" || !isAdmin ? (
               /* Grid View - Used for public view and admin grid view */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 max-w-7xl mx-auto px-4">
                 {filteredPlacements.map((placement) => (
                   <Card key={placement.$id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="aspect-square relative overflow-hidden bg-gray-100">
@@ -304,56 +362,58 @@ export default function PlacementsPage() {
                           alt={placement.studentName} 
                           className="object-cover" 
                         />
-                        <AvatarFallback className="text-2xl font-bold">
+                        <AvatarFallback className="text-lg sm:text-2xl font-bold">
                           {placement.studentName
                             ?.split(" ")
                             .map((n) => n[0])
                             .join("") || "?"}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                        <h3 className="text-white font-bold text-xl">{placement.studentName}</h3>
-                        <p className="text-white/90 text-sm">{placement.department}</p>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 md:p-4">
+                        <h3 className="text-white font-bold text-lg md:text-xl truncate">{placement.studentName}</h3>
+                        <p className="text-white/90 text-xs md:text-sm truncate">{placement.department}</p>
                       </div>
                     </div>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 md:p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <Building2 className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium">{placement.company}</span>
-                        {placement.batch && <Badge className="ml-auto">{placement.batch}</Badge>}
+                        <Building2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span className="font-medium text-sm md:text-base truncate flex-1">{placement.company}</span>
+                        {placement.batch && <Badge className="text-xs">{placement.batch}</Badge>}
                       </div>
-                      <div className="space-y-1 text-sm text-gray-600">
+                      <div className="space-y-1 text-xs md:text-sm text-gray-600">
                         {placement.position && (
                           <div className="flex items-center gap-2">
-                            <Briefcase className="w-4 h-4" />
-                            <span>{placement.position}</span>
+                            <Briefcase className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                            <span className="truncate">{placement.position}</span>
                           </div>
                         )}
                         {placement.location && (
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            <span>{placement.location}</span>
+                            <MapPin className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                            <span className="truncate">{placement.location}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2 font-medium text-green-600">
-                          <span>{placement.package}</span>
+                          <span className="text-sm md:text-base">{placement.package}</span>
                         </div>
                       </div>
                       {placement.testimonial && (
-                        <p className="text-gray-600 text-sm mt-3 italic line-clamp-3">
+                        <p className="text-gray-600 text-xs md:text-sm mt-3 italic line-clamp-3">
                           "{placement.testimonial}"
                         </p>
                       )}
                       {isAdmin && (
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="mt-4 grid grid-cols-2 gap-2">
                           {placement.photo && (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => downloadFile(placement.photo!, `${placement.studentName}-photo.jpg`)}
+                              className="text-xs"
                             >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Photo
+                              <Eye className="w-3 h-3 mr-1" />
+                              <span className="hidden sm:inline">Photo</span>
+                              <span className="sm:hidden">📷</span>
                             </Button>
                           )}
                           {placement.offerLetter && (
@@ -361,27 +421,32 @@ export default function PlacementsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => downloadFile(placement.offerLetter!, `${placement.studentName}-offer-letter.pdf`)}
+                              className="text-xs"
                             >
-                              <Download className="w-4 h-4 mr-1" />
-                              Offer Letter
+                              <Download className="w-3 h-3 mr-1" />
+                              <span className="hidden sm:inline">Offer</span>
+                              <span className="sm:hidden">📄</span>
                             </Button>
                           )}
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => editPlacement(placement)}
+                            className="text-xs"
                           >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Edit
+                            <Edit className="w-3 h-3 mr-1" />
+                            <span className="hidden sm:inline">Edit</span>
+                            <span className="sm:hidden">✏️</span>
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => deletePlacement(placement.$id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 text-xs"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            <span className="hidden sm:inline">Delete</span>
+                            <span className="sm:hidden">🗑️</span>
                           </Button>
                         </div>
                       )}
@@ -391,14 +456,14 @@ export default function PlacementsPage() {
               </div>
             ) : (
               /* Table View - Admin only */
-              <div className="space-y-6 max-w-6xl mx-auto">
+              <div className="space-y-4 md:space-y-6 max-w-6xl mx-auto px-4">
                 {filteredPlacements.map((placement) => (
                   <Card key={placement.$id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row gap-6">
+                    <CardContent className="p-4 md:p-6">
+                      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                         {/* Student Photo */}
-                        <div className="flex-shrink-0">
-                          <div className="w-24 h-24 bg-white rounded-lg border flex items-center justify-center overflow-hidden">
+                        <div className="flex justify-center lg:justify-start flex-shrink-0">
+                          <div className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-lg border flex items-center justify-center overflow-hidden">
                             {placement.photo ? (
                               <img
                                 src={getFilePreviewUrl(placement.photo)}
@@ -409,73 +474,89 @@ export default function PlacementsPage() {
                                 }}
                               />
                             ) : (
-                              <User className="w-12 h-12 text-gray-400" />
+                              <User className="w-10 h-10 md:w-12 md:h-12 text-gray-400" />
                             )}
                           </div>
                         </div>
 
                         {/* Placement Details */}
                         <div className="flex-grow">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900">{placement.studentName}</h3>
-                              <div className="flex items-center gap-2 text-gray-600 mt-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                            <div className="text-center lg:text-left">
+                              <h3 className="text-lg md:text-xl font-bold text-gray-900">{placement.studentName}</h3>
+                              <div className="flex items-center justify-center lg:justify-start gap-2 text-gray-600 mt-1">
                                 <GraduationCap className="w-4 h-4" />
-                                <span>{placement.studentId}</span>
+                                <span className="text-sm md:text-base">{placement.studentId}</span>
                               </div>
                             </div>
-                            <div className="flex gap-2 mt-2 md:mt-0">
-                              {placement.department && <Badge variant="outline">{placement.department}</Badge>}
-                              {placement.batch && <Badge variant="secondary">{placement.batch}</Badge>}
+                            <div className="flex flex-wrap justify-center lg:justify-end gap-2">
+                              {placement.department && (
+                                <Badge variant="outline" className="text-xs">
+                                  <span className="hidden sm:inline">{placement.department}</span>
+                                  <span className="sm:hidden">{placement.department.substring(0, 3)}</span>
+                                </Badge>
+                              )}
+                              {placement.batch && <Badge variant="secondary" className="text-xs">{placement.batch}</Badge>}
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4 mb-4">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Building2 className="w-4 h-4" />
-                              <span>{placement.company}</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-4 mb-4">
+                            <div className="flex items-center justify-center lg:justify-start gap-2 text-sm text-gray-600">
+                              <Building2 className="w-4 h-4 flex-shrink-0" />
+                              <span className="truncate">{placement.company}</span>
                             </div>
                             {placement.position && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <span className="font-medium">{placement.position}</span>
+                              <div className="flex items-center justify-center lg:justify-start gap-2 text-sm text-gray-600">
+                                <Briefcase className="w-4 h-4 flex-shrink-0" />
+                                <span className="font-medium truncate">{placement.position}</span>
                               </div>
                             )}
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <div className="flex items-center justify-center lg:justify-start gap-2 text-sm text-gray-600">
                               <span className="font-medium text-green-600">{placement.package}</span>
                             </div>
                             {placement.location && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <MapPin className="w-4 h-4" />
-                                <span>{placement.location}</span>
+                              <div className="flex items-center justify-center lg:justify-start gap-2 text-sm text-gray-600">
+                                <MapPin className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">{placement.location}</span>
                               </div>
                             )}
                             {placement.offerLetterDate && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Calendar className="w-4 h-4" />
-                                <span>Offer: {new Date(placement.offerLetterDate).toLocaleDateString()}</span>
+                              <div className="flex items-center justify-center lg:justify-start gap-2 text-sm text-gray-600">
+                                <Calendar className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">
+                                  <span className="hidden sm:inline">Offer: </span>
+                                  {new Date(placement.offerLetterDate).toLocaleDateString()}
+                                </span>
                               </div>
                             )}
                             {placement.joiningDate && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Calendar className="w-4 h-4" />
-                                <span>Joining: {new Date(placement.joiningDate).toLocaleDateString()}</span>
+                              <div className="flex items-center justify-center lg:justify-start gap-2 text-sm text-gray-600">
+                                <Calendar className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">
+                                  <span className="hidden sm:inline">Joining: </span>
+                                  {new Date(placement.joiningDate).toLocaleDateString()}
+                                </span>
                               </div>
                             )}
                           </div>
 
                           {placement.testimonial && (
-                            <p className="text-gray-600 mb-4 italic">"{placement.testimonial}"</p>
+                            <p className="text-gray-600 mb-4 italic text-sm md:text-base text-center lg:text-left">
+                              "{placement.testimonial}"
+                            </p>
                           )}
 
-                          <div className="flex flex-wrap gap-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {placement.photo && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => downloadFile(placement.photo!, `${placement.studentName}-photo.jpg`)}
+                                className="text-xs"
                               >
-                                <Eye className="w-4 h-4 mr-2" />
-                                View Photo
+                                <Eye className="w-3 h-3 mr-1 md:w-4 md:h-4 md:mr-2" />
+                                <span className="hidden sm:inline">View Photo</span>
+                                <span className="sm:hidden">Photo</span>
                               </Button>
                             )}
                             {placement.offerLetter && (
@@ -483,9 +564,11 @@ export default function PlacementsPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => downloadFile(placement.offerLetter!, `${placement.studentName}-offer-letter.pdf`)}
+                                className="text-xs"
                               >
-                                <Download className="w-4 h-4 mr-2" />
-                                Download Offer Letter
+                                <Download className="w-3 h-3 mr-1 md:w-4 md:h-4 md:mr-2" />
+                                <span className="hidden sm:inline">Download Offer Letter</span>
+                                <span className="sm:hidden">Offer</span>
                               </Button>
                             )}
                             {isAdmin && (
@@ -494,18 +577,21 @@ export default function PlacementsPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => editPlacement(placement)}
+                                  className="text-xs"
                                 >
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit
+                                  <Edit className="w-3 h-3 mr-1 md:w-4 md:h-4 md:mr-2" />
+                                  <span className="hidden sm:inline">Edit</span>
+                                  <span className="sm:hidden">Edit</span>
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => deletePlacement(placement.$id)}
-                                  className="text-red-600 hover:text-red-700"
+                                  className="text-red-600 hover:text-red-700 text-xs"
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete
+                                  <Trash2 className="w-3 h-3 mr-1 md:w-4 md:h-4 md:mr-2" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                  <span className="sm:hidden">Del</span>
                                 </Button>
                               </>
                             )}

@@ -317,7 +317,7 @@ export default function JobDetailPage() {
                     <div className="space-y-2 text-gray-700">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        <span>Application Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}</span>
+                        <span>Application Deadline: {new Date(job.applicationDeadline).toLocaleDateString()} at {new Date(job.applicationDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       {job.driveDate && (
                         <div className="flex items-center gap-2">

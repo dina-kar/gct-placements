@@ -173,8 +173,8 @@ export default function JobsPage() {
             <div className="flex items-center gap-4">
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
@@ -182,7 +182,7 @@ export default function JobsPage() {
                   <Briefcase className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">GCT Placement Portal</h1>
+                  <h1 className="text-lg font-bold text-gray-900">Placement Portal</h1>
                   <p className="text-sm text-gray-600">Job Openings</p>
                 </div>
               </div>
@@ -342,7 +342,7 @@ export default function JobsPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                   <Clock className="w-4 h-4" />
-                                  <span>Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}</span>
+                                  <span>Deadline: {new Date(job.applicationDeadline).toLocaleDateString()} at {new Date(job.applicationDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                   <TrendingUp className="w-4 h-4" />
