@@ -28,18 +28,14 @@ export function ProtectedRoute({
   useEffect(() => {
     if (loading) return
 
-    console.log('ProtectedRoute effect - loading:', loading, 'isAuthenticated:', isAuthenticated, 'hasStudentAccess:', hasStudentAccess, 'user:', user)
-
     // Check authentication requirement
     if (requireAuth && !isAuthenticated) {
-      console.log('ProtectedRoute: Not authenticated, redirecting to', redirectTo)
       router.push(redirectTo)
       return
     }
 
     // Check admin requirement - placement reps can access both admin and student routes
     if (adminOnly && !isAdmin) {
-      console.log('ProtectedRoute: Admin only but user is not admin')
       // Redirect non-admins to appropriate dashboard
       if (hasStudentAccess) {
         router.push('/dashboard') // Student dashboard for students/placement reps
@@ -51,12 +47,10 @@ export function ProtectedRoute({
 
     // Check student access requirement - only students and placement reps
     if (studentAccessOnly && !hasStudentAccess) {
-      console.log('ProtectedRoute: Student access only but user does not have student access')
       // Redirect admin-only users to admin dashboard
       if (hasAdminOnlyAccess) {
         router.push('/admin/dashboard')
       } else {
-        console.log('ProtectedRoute: No admin access either, redirecting to login')
         router.push('/login') // No access
       }
       return
@@ -64,7 +58,6 @@ export function ProtectedRoute({
 
     // Check specific role requirement
     if (requiredRole && !hasRole(requiredRole)) {
-      console.log('ProtectedRoute: Required role not met')
       // Intelligent redirect based on user's access
       if (hasAdminOnlyAccess) {
         router.push('/admin/dashboard')
@@ -75,7 +68,7 @@ export function ProtectedRoute({
       }
       return
     }
-  }, [loading, isAuthenticated, isAdmin, hasStudentAccess, hasAdminOnlyAccess, hasRole, requiredRole, adminOnly, studentAccessOnly, requireAuth, router, redirectTo, user])
+  }, [loading, isAuthenticated, isAdmin, hasStudentAccess, hasAdminOnlyAccess, hasRole, requiredRole, adminOnly, studentAccessOnly, requireAuth, router, redirectTo])
 
   // Show loading state
   if (loading) {

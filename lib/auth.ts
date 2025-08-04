@@ -13,72 +13,25 @@ export class AuthService {
   // Send OTP to email
   static async sendOTP(email: string): Promise<{ success: boolean; message: string; token?: string }> {
     try {
-      // Check if email exists in our users collection
-      let userExistsInCollection = false
-      
-      try {
-        const existingUsers = await databases.listDocuments(
-          config.databaseId,
-          config.collections.users,
-          [Query.equal('collegeEmail', email)]
-        )
-        
-        if (existingUsers.documents.length > 0) {
-          userExistsInCollection = true
-        }
-      } catch (dbError) {
-        console.error('Database check failed:', dbError)
+      if (!this.validateEmailDomain(email)) {
         return {
           success: false,
-          message: 'Unable to verify email. Please try again later.'
+          message: `Please use your official ${config.allowedEmailDomain} email address`
         }
       }
-      
-      // If email exists in users collection, proceed with OTP
-      if (userExistsInCollection) {
-        try {
-          const token = await account.createEmailToken(ID.unique(), email)
-          return {
-            success: true,
-            message: 'OTP sent to your email address',
-            token: token.userId
-          }
-        } catch (authError: any) {
-          console.error('OTP send error for existing user:', authError)
-          return {
-            success: false,
-            message: 'Failed to send OTP. Please try again or contact the placement office.'
-          }
-        }
-      }
-      
-      // Email not found in users collection
-      if (this.validateEmailDomain(email)) {
-        return {
-          success: false,
-          message: 'Email not found. Please sign up first using the registration page.'
-        }
-      } else {
-        return {
-          success: false,
-          message: 'Email not found in our system. Please contact the placement office to add your email.'
-        }
-      }
-      
-    } catch (error: any) {
-      console.error('Send OTP error:', error)
-      
-      // Handle rate limiting
-      if (error.code === 429) {
-        return {
-          success: false,
-          message: 'Too many requests. Please wait a moment and try again.'
-        }
-      }
+
+      const token = await account.createEmailToken(ID.unique(), email)
       
       return {
+        success: true,
+        message: 'OTP sent to your email address',
+        token: token.userId
+      }
+    } catch (error: any) {
+      console.error('Send OTP error:', error)
+      return {
         success: false,
-        message: error.message || 'Failed to send OTP. Please try again.'
+        message: error.message || 'Failed to send OTP'
       }
     }
   }
@@ -92,61 +45,14 @@ export class AuthService {
       // Get user profile from database
       let userProfile = null
       try {
-        // First try to get by document ID (for users created through auth)
         userProfile = await databases.getDocument(
           config.databaseId,
           config.collections.users,
           user.$id
         )
       } catch (profileError) {
-        // If not found by ID, try to find by email (for manually added users)
-        try {
-          const profileResult = await databases.listDocuments(
-            config.databaseId,
-            config.collections.users,
-            [Query.equal('collegeEmail', user.email)]
-          )
-          
-          if (profileResult.documents.length > 0) {
-            userProfile = profileResult.documents[0]
-          }
-        } catch (emailSearchError) {
-          console.log('Email search also failed, user truly not in collection')
-        }
-        
-        // If still no profile found, create one for manually added emails
-        if (!userProfile) {
-          console.log('User profile not found, creating basic profile for manually added email')
-          
-          try {
-            // Create a basic user profile for manually added emails
-            userProfile = await databases.createDocument(
-              config.databaseId,
-              config.collections.users,
-              user.$id,
-              {
-                userId: user.$id,
-                collegeEmail: user.email,
-                fullName: user.name || 'User', // Use the name from Appwrite or default
-                rollNo: '', // Will be filled later by the user
-                department: '',
-                batch: '',
-                role: UserRole.STUDENT, // Default role for manually added students
-                isPlacementRep: false,
-                country: 'India',
-                historyOfArrear: 'No',
-                activeBacklog: 'No',
-                noOfBacklogs: '0',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-              }
-            )
-            console.log('Created basic user profile for manually added email')
-          } catch (createError) {
-            console.error('Failed to create user profile:', createError)
-            // Continue without profile - the user can complete it later
-          }
-        }
+        // User profile doesn't exist yet, will be created during signup
+        console.log('User profile not found, probably first time login')
       }
 
       return {
@@ -261,39 +167,9 @@ export class AuthService {
         
         if (profileResult.documents.length > 0) {
           userProfile = profileResult.documents[0]
-        } else {
-          // No profile found by email, this might be a manually added user who needs a profile
-          // For manually added users (non-GCT emails), create a basic profile
-          if (!this.validateEmailDomain(user.email)) {
-            try {
-              userProfile = await databases.createDocument(
-                config.databaseId,
-                config.collections.users,
-                user.$id,
-                {
-                  userId: user.$id,
-                  collegeEmail: user.email,
-                  fullName: user.name || 'User',
-                  rollNo: '',
-                  department: '',
-                  batch: '',
-                  role: UserRole.STUDENT,
-                  isPlacementRep: false,
-                  country: 'India',
-                  historyOfArrear: 'No',
-                  activeBacklog: 'No',
-                  noOfBacklogs: '0',
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString()
-                }
-              )
-            } catch (createError) {
-              console.error('Failed to create profile in getCurrentUser:', createError)
-            }
-          }
         }
       } catch (error) {
-        console.error('User profile lookup failed:', error)
+        console.log('User profile not found')
       }
 
       // Check for admin role
@@ -306,7 +182,6 @@ export class AuthService {
         name: user.name || (userProfile ? userProfile.fullName : 'User')
       }
     } catch (error) {
-      console.error('getCurrentUser failed:', error)
       return null
     }
   }
@@ -386,25 +261,7 @@ export class AuthService {
       return true
     }
     
-    // For authenticated users without a complete profile (manually added emails)
-    // Grant student access by default if they don't have an admin role
-    if (!user.profile && !user.adminRole) {
-      return true
-    }
-    
     return false
-  }
-
-  // Check if user profile needs completion (for manually added emails)
-  static isProfileIncomplete(user: any): boolean {
-    if (!user || !user.profile) return true
-    
-    const profile = user.profile
-    return !profile.rollNo || 
-           !profile.department || 
-           !profile.batch || 
-           !profile.fullName || 
-           profile.fullName === 'User'
   }
 
   // Check if user should have admin-only access (officers and coordinators)

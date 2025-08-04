@@ -225,7 +225,7 @@ export default function SignupPage() {
                     <Label htmlFor="rollNo">Roll Number</Label>
                     <Input
                       id="rollNo"
-                      placeholder="71772211210"
+                      placeholder="21CS001"
                       value={formData.rollNo}
                       onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
                       required

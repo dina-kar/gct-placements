@@ -35,7 +35,7 @@ import {
   Linkedin
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { DatabaseService } from "@/lib/database"
 import { StudentRoute } from "@/components/ProtectedRoute"
@@ -47,9 +47,7 @@ function ProfilePageContent() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [message, setMessage] = useState({ type: "", text: "" })
-  const [isCompletionMode, setIsCompletionMode] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [profileData, setProfileData] = useState({
     fullName: "",
@@ -161,19 +159,6 @@ function ProfilePageContent() {
     }
   }, [user])
 
-  // Check if user is in profile completion mode
-  useEffect(() => {
-    const complete = searchParams.get('complete')
-    if (complete === 'true') {
-      setIsCompletionMode(true)
-      setIsEditing(true)
-      setMessage({ 
-        type: "info", 
-        text: "Please complete your profile information to continue." 
-      })
-    }
-  }, [searchParams])
-
   const handleSave = async () => {
     if (!user) return
     
@@ -189,21 +174,11 @@ function ProfilePageContent() {
         activeBacklog: profileData.activeBacklog as "Yes" | "No"
       })
       
-      if (isCompletionMode) {
-        setMessage({ 
-          type: "success", 
-          text: "Profile completed successfully! Redirecting to dashboard..." 
-        })
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 2000)
-      } else {
-        setMessage({ 
-          type: "success", 
-          text: "Profile updated successfully!" 
-        })
-        setIsEditing(false)
-      }
+      setMessage({ 
+        type: "success", 
+        text: "Profile updated successfully!" 
+      })
+      setIsEditing(false)
     } catch (error: any) {
       setMessage({ 
         type: "error", 
@@ -332,54 +307,43 @@ function ProfilePageContent() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {!isCompletionMode && (
-                <Link href="/dashboard">
-                  <Button variant="ghost" size="sm">
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back  
-                  </Button>
-                </Link>
-              )}
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back  
+                </Button>
+              </Link>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">
-                    {isCompletionMode ? "Complete Your Profile" : "Profile"}
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    {isCompletionMode 
-                      ? "Please fill in the required information" 
-                      : "Update your information"
-                    }
-                  </p>
+                  <h1 className="text-xl font-bold text-gray-900">Profile</h1>
+                  <p className="text-sm text-gray-600">Update your information</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {!isEditing && !isCompletionMode ? (
+              {!isEditing ? (
                 <Button onClick={() => setIsEditing(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  {!isCompletionMode && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsEditing(false)
-                        setMessage({ type: "", text: "" })
-                      }}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setMessage({ type: "", text: "" })
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
                   <Button onClick={handleSave} disabled={isSaving}>
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? "Saving..." : isCompletionMode ? "Complete Profile" : "Save Changes"}
+                    {isSaving ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
               )}
