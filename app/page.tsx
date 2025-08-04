@@ -69,7 +69,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-3xl text-center">
             <Badge className="mb-6 bg-accent text-accent-foreground border border-border/70">
               <Star className="w-4 h-4 mr-2 text-primary" />
-              Build Your Future with GCT Placement Cell
+              Trusted by 10,000+ Students
             </Badge>
 
             <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
