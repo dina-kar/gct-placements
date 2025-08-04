@@ -33,7 +33,7 @@ export default function SignupPage() {
   const [otpToken, setOtpToken] = useState("")
   const [signupData, setSignupData] = useState<any>(null)
   const router = useRouter()
-  const { signup, verifyOTP, completeRegistration, resendSignupOTP } = useAuth()
+  const { signup, verifyOTP, completeRegistration } = useAuth()
 
   const departments = [
     "Computer Science and Engineering",
@@ -118,11 +118,11 @@ export default function SignupPage() {
     setError("")
     
     try {
-      const result = await resendSignupOTP(formData.email)
+      const result = await signup(signupData)
       
       if (result.success) {
         setSuccess("New OTP sent to your email")
-        setOtpToken(result.token || "")
+        setOtpToken(result.user?.token || "")
       } else {
         setError(result.message)
       }
