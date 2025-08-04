@@ -99,7 +99,7 @@ export default function LandingPage() {
                   </Link>
                   <Link href="/admin/login">
                     <Button size="lg" variant="outline" className="btn-outline-strong">
-                      Placement Representative Access
+                      Recruiter Access
                     </Button>
                   </Link>
                 </>
@@ -203,8 +203,8 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { name: "Thamarai", role: "SWE @ TopTech", quote: "The portal made applications effortless and interviews organized." },
-              { name: "Manoj K", role: "Data Analyst @ Finlytics", quote: "Smart matching helped me find roles that fit my profile perfectly." },
+              { name: "Priya S", role: "SWE @ TopTech", quote: "The portal made applications effortless and interviews organized." },
+              { name: "Arun K", role: "Data Analyst @ Finlytics", quote: "Smart matching helped me find roles that fit my profile perfectly." },
               { name: "Meera V", role: "Product Engineer @ BuildCo", quote: "Loved the clean UI and real-time updates on every round." },
             ].map((t) => (
               <div key={t.name} className="card-soft card-hover p-6">
@@ -241,11 +241,11 @@ export default function LandingPage() {
           <div className="card-soft p-8 relative overflow-hidden">
             <div className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full blur-3xl opacity-20"
                  style={{ backgroundImage: "linear-gradient(90deg, hsl(var(--grad-to)), hsl(var(--grad-from)))" }} />
-            <h4 className="text-2xl font-semibold mb-2">Placement Reps</h4>
+            <h4 className="text-2xl font-semibold mb-2">Recruiters</h4>
             <p className="text-sm text-muted-foreground mb-5">Post jobs, shortlist candidates and manage processes.</p>
-            <Link href="/admin/login">
+            <Link href="/admin/signup">
               <Button variant="outline" className="btn-outline-strong">
-                Register as Placement Representative
+                Register as Recruiter
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
