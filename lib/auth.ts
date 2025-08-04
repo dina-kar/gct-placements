@@ -11,31 +11,62 @@ export class AuthService {
   }
 
   // Send OTP to email
-  static async sendOTP(email: string): Promise<{ success: boolean; message: string; token?: string }> {
+  static async sendOTP(email: string, isLogin: boolean = true): Promise<{ success: boolean; message: string; token?: string }> {
     try {
-      // Check if email exists in our users collection
-      let userExistsInCollection = false
-      
-      try {
-        const existingUsers = await databases.listDocuments(
-          config.databaseId,
-          config.collections.users,
-          [Query.equal('collegeEmail', email)]
-        )
+      // For login flow, check if email exists in our users collection
+      if (isLogin) {
+        let userExistsInCollection = false
         
-        if (existingUsers.documents.length > 0) {
-          userExistsInCollection = true
+        try {
+          const existingUsers = await databases.listDocuments(
+            config.databaseId,
+            config.collections.users,
+            [Query.equal('collegeEmail', email)]
+          )
+          
+          if (existingUsers.documents.length > 0) {
+            userExistsInCollection = true
+          }
+        } catch (dbError) {
+          console.error('Database check failed:', dbError)
+          return {
+            success: false,
+            message: 'Unable to verify email. Please try again later.'
+          }
         }
-      } catch (dbError) {
-        console.error('Database check failed:', dbError)
-        return {
-          success: false,
-          message: 'Unable to verify email. Please try again later.'
+        
+        // If email exists in users collection, proceed with OTP
+        if (userExistsInCollection) {
+          try {
+            const token = await account.createEmailToken(ID.unique(), email)
+            return {
+              success: true,
+              message: 'OTP sent to your email address',
+              token: token.userId
+            }
+          } catch (authError: any) {
+            console.error('OTP send error for existing user:', authError)
+            return {
+              success: false,
+              message: 'Failed to send OTP. Please try again or contact the placement office.'
+            }
+          }
         }
-      }
-      
-      // If email exists in users collection, proceed with OTP
-      if (userExistsInCollection) {
+        
+        // Email not found in users collection
+        if (this.validateEmailDomain(email)) {
+          return {
+            success: false,
+            message: 'Email not found. Please sign up first using the registration page.'
+          }
+        } else {
+          return {
+            success: false,
+            message: 'Email not found in our system. Please contact the placement office to add your email.'
+          }
+        }
+      } else {
+        // For signup flow, just send OTP without checking database
         try {
           const token = await account.createEmailToken(ID.unique(), email)
           return {
@@ -44,24 +75,20 @@ export class AuthService {
             token: token.userId
           }
         } catch (authError: any) {
-          console.error('OTP send error for existing user:', authError)
+          console.error('OTP send error for new user:', authError)
+          
+          // Handle rate limiting
+          if (authError.code === 429) {
+            return {
+              success: false,
+              message: 'Too many requests. Please wait a moment and try again.'
+            }
+          }
+          
           return {
             success: false,
-            message: 'Failed to send OTP. Please try again or contact the placement office.'
+            message: 'Failed to send OTP. Please try again.'
           }
-        }
-      }
-      
-      // Email not found in users collection
-      if (this.validateEmailDomain(email)) {
-        return {
-          success: false,
-          message: 'Email not found. Please sign up first using the registration page.'
-        }
-      } else {
-        return {
-          success: false,
-          message: 'Email not found in our system. Please contact the placement office to add your email.'
         }
       }
       
@@ -181,24 +208,84 @@ export class AuthService {
         }
       }
 
-      // First, send OTP for email verification
-      const otpResult = await this.sendOTP(data.email)
-      if (!otpResult.success) {
-        return otpResult
+      // Check if user already exists in our database
+      try {
+        const existingUsers = await databases.listDocuments(
+          config.databaseId,
+          config.collections.users,
+          [Query.equal('collegeEmail', data.email)]
+        )
+        
+        if (existingUsers.documents.length > 0) {
+          return {
+            success: false,
+            message: 'An account with this email already exists. Please use the login page instead.'
+          }
+        }
+      } catch (dbError) {
+        console.error('Database check failed:', dbError)
+        return {
+          success: false,
+          message: 'Unable to verify email. Please try again later.'
+        }
       }
 
-      // The user will need to verify OTP, then we'll create their profile
-      // For now, return the token for OTP verification
-      return {
-        success: true,
-        message: 'Verification email sent. Please check your email and verify with OTP.',
-        user: { token: otpResult.token, signupData: data }
+      // Send OTP for email verification (directly for new users)
+      try {
+        const token = await account.createEmailToken(ID.unique(), data.email)
+        return {
+          success: true,
+          message: 'Verification email sent. Please check your email and verify with OTP.',
+          user: { token: token.userId, signupData: data }
+        }
+      } catch (authError: any) {
+        console.error('OTP send error for new user:', authError)
+        
+        // Handle rate limiting
+        if (authError.code === 429) {
+          return {
+            success: false,
+            message: 'Too many requests. Please wait a moment and try again.'
+          }
+        }
+        
+        return {
+          success: false,
+          message: 'Failed to send verification email. Please try again.'
+        }
       }
     } catch (error: any) {
       console.error('Create user error:', error)
       return {
         success: false,
         message: error.message || 'Failed to create user'
+      }
+    }
+  }
+
+  // Resend OTP for signup flow
+  static async resendSignupOTP(email: string): Promise<{ success: boolean; message: string; token?: string }> {
+    try {
+      const token = await account.createEmailToken(ID.unique(), email)
+      return {
+        success: true,
+        message: 'New verification email sent. Please check your email.',
+        token: token.userId
+      }
+    } catch (authError: any) {
+      console.error('Resend OTP error for signup:', authError)
+      
+      // Handle rate limiting
+      if (authError.code === 429) {
+        return {
+          success: false,
+          message: 'Too many requests. Please wait a moment and try again.'
+        }
+      }
+      
+      return {
+        success: false,
+        message: 'Failed to resend verification email. Please try again.'
       }
     }
   }

@@ -18,6 +18,7 @@ interface AuthContextType {
     role: UserRole
     isPlacementRep?: boolean
   }) => Promise<{ success: boolean; message: string; user?: any }>
+  resendSignupOTP: (email: string) => Promise<{ success: boolean; message: string; token?: string }>
   completeRegistration: (userData: any) => Promise<{ success: boolean; message: string }>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -94,6 +95,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return result
   }
 
+  const resendSignupOTP = async (email: string) => {
+    const result = await AuthService.resendSignupOTP(email)
+    return result
+  }
+
   const completeRegistration = async (userData: any) => {
     const result = await AuthService.completeRegistration(userData)
     if (result.success && result.user) {
@@ -132,6 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     verifyOTP,
     signup,
+    resendSignupOTP,
     completeRegistration,
     logout,
     refreshUser,
