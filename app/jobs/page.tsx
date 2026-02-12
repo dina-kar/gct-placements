@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { DatabaseService } from "@/lib/database"
 import { Job } from "@/lib/appwrite"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
+import { CardSkeleton } from "@/components/Skeletons"
 
 export default function JobsPage() {
   const { user, isAuthenticated } = useAuth()
@@ -189,6 +190,92 @@ export default function JobsPage() {
     )
   }
 
+  const JobsList = () => (
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {filteredJobs.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">No job openings match your search criteria.</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => {
+              setSearchTerm("")
+              setFilterDepartment("all")
+              setFilterLocation("all")
+              setFilterMinCGPA("all")
+            }}
+          >
+            Clear Filters
+          </Button>
+        </div>
+      ) : (
+        filteredJobs.map((job) => {
+          const eligibility = isEligibleForJob(job)
+          const applicationStatus = getApplicationStatus(job.$id)
+          const applicationCount = getApplicationCount(job.$id)
+          return (
+            <Card key={job.$id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 bg-white rounded-lg border flex items-center justify-center overflow-hidden">
+                      {job.logo ? (
+                        <img src={job.logo} alt={`${job.company} logo`} className="max-w-full max-h-full" />
+                      ) : (
+                        <Building2 className="w-8 h-8 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-grow">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
+                        <div className="flex items-center gap-2 text-gray-600 mt-1">
+                          <Building2 className="w-4 h-4" />
+                          <span>{job.company}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-2 md:mt-0">
+                        <Badge variant={job.status === 'active' ? "default" : "secondary"}>{job.status}</Badge>
+                        {applicationStatus && <Badge variant="secondary">Applied</Badge>}
+                        {!eligibility.eligible && <Badge variant="destructive">Not Eligible</Badge>}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600"><MapPin className="w-4 h-4" /><span>{job.location}</span></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600"><Calendar className="w-4 h-4" /><span>Job Type: {job.jobType}</span></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600"><Clock className="w-4 h-4" /><span>Deadline: {new Date(job.applicationDeadline).toLocaleDateString()} at {new Date(job.applicationDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600"><TrendingUp className="w-4 h-4" /><span>Min CGPA: {job.minCGPA}</span></div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-green-600"><span>{job.package}</span></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600"><Users className="w-4 h-4" /><span>{applicationCount} applications</span></div>
+                    </div>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{job.description}</p>
+                    {!eligibility.eligible && (
+                      <div className="bg-red-50 border border-red-200 rounded p-2 mb-3">
+                        <p className="text-sm text-red-600">{eligibility.reason}</p>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {job.departments.map((dept, index) => (
+                        <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50">{dept.split(" ")[0]}</Badge>
+                      ))}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Link href={`/jobs/${job.$id}`} className="flex-1"><Button variant="outline" className="w-full">View Details</Button></Link>
+                      {eligibility.eligible && !applicationStatus && job.status === 'active' && <Link href={`/jobs/${job.$id}/apply`} className="flex-1"><Button className="w-full">Apply Now</Button></Link>}
+                      {applicationStatus && <Button variant="secondary" className="flex-1" disabled>Applied - {applicationStatus.replace('_', ' ').toUpperCase()}</Button>}
+                      {!eligibility.eligible && <Button variant="outline" className="flex-1" disabled>Not Eligible</Button>}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })
+      )}
+    </div>
+  )
+
   return (
     <ProtectedRoute requireAuth>
       <div className="min-h-screen bg-gray-50">
@@ -291,145 +378,7 @@ export default function JobsPage() {
               </div>
 
               {/* Jobs List */}
-              <div className="space-y-6 max-w-5xl mx-auto">
-                {filteredJobs.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">No job openings match your search criteria.</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchTerm("")
-                        setFilterDepartment("all")
-                        setFilterLocation("all")
-                        setFilterMinCGPA("all")
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  </div>
-                ) : (
-                  filteredJobs.map((job) => {
-                    const eligibility = isEligibleForJob(job)
-                    const applicationStatus = getApplicationStatus(job.$id)
-                    const applicationCount = getApplicationCount(job.$id)
-                    
-                    return (
-                      <Card key={job.$id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex flex-col md:flex-row gap-6">
-                            {/* Company Logo */}
-                            <div className="flex-shrink-0">
-                              <div className="w-16 h-16 bg-white rounded-lg border flex items-center justify-center overflow-hidden">
-                                {job.logo ? (
-                                  <img
-                                    src={job.logo}
-                                    alt={`${job.company} logo`}
-                                    className="max-w-full max-h-full"
-                                  />
-                                ) : (
-                                  <Building2 className="w-8 h-8 text-gray-400" />
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Job Details */}
-                            <div className="flex-grow">
-                              <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
-                                <div>
-                                  <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
-                                  <div className="flex items-center gap-2 text-gray-600 mt-1">
-                                    <Building2 className="w-4 h-4" />
-                                    <span>{job.company}</span>
-                                  </div>
-                                </div>
-                                <div className="flex gap-2 mt-2 md:mt-0">
-                                  <Badge variant={job.status === 'active' ? "default" : "secondary"}>
-                                    {job.status}
-                                  </Badge>
-                                  {applicationStatus && (
-                                    <Badge variant="secondary">Applied</Badge>
-                                  )}
-                                  {!eligibility.eligible && (
-                                    <Badge variant="destructive">Not Eligible</Badge>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4 mb-4">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <MapPin className="w-4 h-4" />
-                                  <span>{job.location}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>Job Type: {job.jobType}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <Clock className="w-4 h-4" />
-                                  <span>Deadline: {new Date(job.applicationDeadline).toLocaleDateString()} at {new Date(job.applicationDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <TrendingUp className="w-4 h-4" />
-                                  <span>Min CGPA: {job.minCGPA}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm font-medium text-green-600">
-                                  <span>{job.package}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <Users className="w-4 h-4" />
-                                  <span>{applicationCount} applications</span>
-                                </div>
-                              </div>
-
-                              <p className="text-gray-600 mb-4 line-clamp-2">{job.description}</p>
-
-                              {!eligibility.eligible && (
-                                <div className="bg-red-50 border border-red-200 rounded p-2 mb-3">
-                                  <p className="text-sm text-red-600">{eligibility.reason}</p>
-                                </div>
-                              )}
-
-                              <div className="flex flex-wrap gap-2 mb-4">
-                                {job.departments.map((dept, index) => (
-                                  <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
-                                    {dept.split(" ")[0]}
-                                  </Badge>
-                                ))}
-                              </div>
-
-                              <div className="flex flex-col sm:flex-row gap-3">
-                                <Link href={`/jobs/${job.$id}`} className="flex-1">
-                                  <Button variant="outline" className="w-full">
-                                    View Details
-                                  </Button>
-                                </Link>
-                                {eligibility.eligible && !applicationStatus && job.status === 'active' && (
-                                  <Link href={`/jobs/${job.$id}/apply`} className="flex-1">
-                                    <Button className="w-full">
-                                      Apply Now
-                                    </Button>
-                                  </Link>
-                                )}
-                                {applicationStatus && (
-                                  <Button variant="secondary" className="flex-1" disabled>
-                                    Applied - {applicationStatus.replace('_', ' ').toUpperCase()}
-                                  </Button>
-                                )}
-                                {!eligibility.eligible && (
-                                  <Button variant="outline" className="flex-1" disabled>
-                                    Not Eligible
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })
-                )}
-              </div>
+              <Suspense fallback={<CardSkeleton count={4} />}> <JobsList /> </Suspense>
             </TabsContent>
           </Tabs>
         </div>

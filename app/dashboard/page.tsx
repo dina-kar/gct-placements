@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { DatabaseService } from "@/lib/database"
 import { Job } from "@/lib/appwrite"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
+import { CardSkeleton, ProfileHeaderSkeleton } from "@/components/Skeletons"
 
 export default function StudentDashboard() {
   const { user, logout, isAuthenticated, isPlacementRep, isAdmin, refreshUser } = useAuth()
@@ -200,6 +201,87 @@ export default function StudentDashboard() {
     )
   }
 
+  const JobsSection = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Briefcase className="w-5 h-5" />
+          Recent Job Openings
+        </CardTitle>
+        <CardDescription>Latest opportunities matching your profile</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {jobs.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No job openings available at the moment.</p>
+          </div>
+        ) : (
+          jobs.map((job) => {
+            const eligibility = isEligibleForJob(job)
+            const applicationStatus = getApplicationStatus(job.$id)
+            return (
+              <div key={job.$id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">{job.title}</h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-4 h-4" />
+                        {job.company}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        {job.location}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge variant={applicationStatus ? "secondary" : eligibility.eligible ? "default" : "destructive"}>
+                    {applicationStatus ? "Applied" : eligibility.eligible ? "Eligible" : "Not Eligible"}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="w-4 h-4" />
+                    {job.package}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    Deadline: {new Date(job.applicationDeadline).toLocaleDateString()} {new Date(job.applicationDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4" />
+                    Min CGPA: {job.minCGPA}
+                  </span>
+                </div>
+                {!eligibility.eligible && (
+                  <div className="bg-red-50 border border-red-200 rounded p-2 mb-3">
+                    <p className="text-sm text-red-600">{eligibility.reason}</p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Link href={`/jobs/${job.$id}`}>
+                    <Button size="sm" variant="outline">View Details</Button>
+                  </Link>
+                  {eligibility.eligible && !applicationStatus && (
+                    <Link href={`/jobs/${job.$id}/apply`}>
+                      <Button size="sm">Apply Now</Button>
+                    </Link>
+                  )}
+                  {applicationStatus && <Button size="sm" disabled>Applied</Button>}
+                </div>
+              </div>
+            )
+          })
+        )}
+        <div className="text-center pt-4">
+          <Link href="/jobs">
+            <Button variant="outline">View All Jobs</Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
   return (
     <ProtectedRoute requireAuth>
       <div className="min-h-screen bg-gray-50">
@@ -323,99 +405,8 @@ export default function StudentDashboard() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
-            {/* Recent Job Openings */}
             <div className="xl:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="w-5 h-5" />
-                    Recent Job Openings
-                  </CardTitle>
-                  <CardDescription>Latest opportunities matching your profile</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {jobs.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No job openings available at the moment.</p>
-                    </div>
-                  ) : (
-                    jobs.map((job) => {
-                      const eligibility = isEligibleForJob(job)
-                      const applicationStatus = getApplicationStatus(job.$id)
-                      
-                      return (
-                        <div key={job.$id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h3 className="font-semibold text-lg">{job.title}</h3>
-                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Building2 className="w-4 h-4" />
-                                  {job.company}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  {job.location}
-                                </span>
-                              </div>
-                            </div>
-                            <Badge variant={applicationStatus ? "secondary" : eligibility.eligible ? "default" : "destructive"}>
-                              {applicationStatus ? "Applied" : eligibility.eligible ? "Eligible" : "Not Eligible"}
-                            </Badge>
-                          </div>
-
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                            <span className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4" />
-                              {job.package}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              Deadline: {new Date(job.applicationDeadline).toLocaleDateString()} {new Date(job.applicationDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <TrendingUp className="w-4 h-4" />
-                              Min CGPA: {job.minCGPA}
-                            </span>
-                          </div>
-
-                          {!eligibility.eligible && (
-                            <div className="bg-red-50 border border-red-200 rounded p-2 mb-3">
-                              <p className="text-sm text-red-600">{eligibility.reason}</p>
-                            </div>
-                          )}
-
-                          <div className="flex gap-2">
-                            <Link href={`/jobs/${job.$id}`}>
-                              <Button size="sm" variant="outline">
-                                View Details
-                              </Button>
-                            </Link>
-                            {eligibility.eligible && !applicationStatus && (
-                              <Link href={`/jobs/${job.$id}/apply`}>
-                                <Button size="sm">
-                                  Apply Now
-                                </Button>
-                              </Link>
-                            )}
-                            {applicationStatus && (
-                              <Button size="sm" disabled>
-                                Applied
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })
-                  )}
-
-                  <div className="text-center pt-4">
-                    <Link href="/jobs">
-                      <Button variant="outline">View All Jobs</Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+              <Suspense fallback={<CardSkeleton count={3} />}> <JobsSection /> </Suspense>
             </div>
 
             {/* Application Status */}

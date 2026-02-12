@@ -316,3 +316,29 @@ This project is licensed under the MIT License. See LICENSE file for details.
 ---
 
 **Built with ❤️ for Government College of Technology** 
+\n+## UI / Loading Enhancements (Sep 2025)
+
+The portal now has a unified loading and skeleton system for smoother perceived performance and visual polish.
+
+Highlights:
+- Reusable loaders: `components/LoadingScreen.tsx` (full + subtle inline variants) and `components/Skeletons.tsx` (card, list, profile header, text).
+- Route-level streaming loading states via new `loading.tsx` files for: root, dashboard, jobs, placements, profile, auth (login/signup), and all admin subsections (add/edit job, placements, manage admins, etc.).
+- Suspense-based fallbacks added inside heavy data pages (`dashboard`, `jobs`, `placements`) to show skeletons while lists resolve.
+- Global gradient + noise background and utility design tokens (`--grad-from`, `--grad-to`) added in `styles/globals.css`.
+- New utility component classes: `btn-primary`, `btn-outline-strong`, `card-soft`, `glass`, `gradient-text`, `pulse-ring`.
+
+Example usage:
+```tsx
+import { Suspense } from 'react'
+import { LoadingScreen } from '@/components/LoadingScreen'
+import { CardSkeleton } from '@/components/Skeletons'
+
+<Suspense fallback={<CardSkeleton count={3} />}> 
+  <JobsSection />
+</Suspense>
+
+<LoadingScreen message="Fetching profile" />
+<LoadingScreen subtle fullscreen={false} message="Refreshing" />
+```
+
+Customize gradient branding by editing `--grad-from` / `--grad-to` in `styles/globals.css`.

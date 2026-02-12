@@ -27,8 +27,15 @@ html {
         `}</style>
       </head>
       <body>
+        {/* Top subtle gradient bar */}
+        <div className="h-1 w-full bg-gradient-to-r from-[hsl(var(--grad-from))] via-[hsl(var(--grad-to))] to-[hsl(var(--grad-from))] opacity-70" />
         <AuthProvider>
-          {children}
+          <div className="min-h-dvh flex flex-col">
+            <main className="flex-1">
+              {children}
+            </main>
+            <div id="portal-root" />
+          </div>
         </AuthProvider>
       </body>
     </html>
